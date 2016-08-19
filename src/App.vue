@@ -165,9 +165,21 @@ img[lazy=error] {
   overflow: scroll;
 }
 @media all and (max-width: 768px) {
+  .switch-header {
+    text-align: left;
+    padding-left: 2rem;
+    font-size: .8rem;
+    box-sizing: border-box;
+  }
   .img-list ul li {
-    width: 49%;
-    margin: .5%;
+    width: 100%;
+    margin: 1% 2.5%;
+  }
+  .box-title {
+    display: none;
+  }
+  .bg-box {
+    min-height: 20em;
   }
 }
 </style>
