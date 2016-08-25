@@ -234,6 +234,7 @@ import ListB from './components/list-B.vue'
 export default {
   data () {
     return {
+      index: 1,
       show: true,
       list: [
         "dist/test1.jpg",
