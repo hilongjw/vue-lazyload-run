@@ -128,17 +128,21 @@ img[lazy=error] {
 }
 
 .switch-header {
+  display: flex;
+  justify-content: space-between;
   position: fixed;
   background: #03A9F4;
   box-shadow: 0 0 1rem #c7c7c7;
   width: 100%;
   z-index: 2;
+  padding: 0 1rem;
   top: 0;
   left: 0;
   text-align: center;
   height: 3rem;
   line-height: 3rem;
   color: #fff;
+  box-sizing: border-box;
 }
 
 .switch-btn {
@@ -148,7 +152,6 @@ img[lazy=error] {
   background: #8BC34A;
   width: 6rem;
   border-radius: 2px;
-  position: absolute;
   top: .5rem;
   height: 2rem;
   right: .5rem;
@@ -209,17 +212,27 @@ img[lazy=error] {
 <template>
   <div id="app">
     <div class="switch-header">
-      <a href="https://github.com/hilongjw/vue-lazyload">
-        <button class="github-btn">
-          <span class="github-icon"></span>
-          <span class="github-text">View on Github</span>
-        </button>
-      </a>
-      <span>{{ show ? 'Using img tag' : 'Using style background-image'}}</span>
-      <button 
-        class="switch-btn" 
-        @click="show = !show"
-      >Switch</button>
+      <div class="header-right">
+        <a href="https://github.com/hilongjw/vue-lazyload">
+          <button class="github-btn">
+            <span class="github-icon"></span>
+            <span class="github-text">View on Github</span>
+          </button>
+        </a>
+      </div>
+      <div class="header-center">
+        <span>{{ show ? 'Using img tag' : 'Using style background-image'}}</span>
+      </div>
+      <div class="header-left">
+        <button 
+          class="switch-btn" 
+          @click="show = !show"
+        >Switch</button>
+        <button 
+          class="switch-btn" 
+          @click="sortAction"
+        >Sort</button>
+      </div>
     </div>
     <div class="content">
       <list-a :list="list" v-if="show" @delete="deleteAction"></list-a>
@@ -231,35 +244,49 @@ img[lazy=error] {
 <script>
 import ListA from './components/list-a.vue'
 import ListB from './components/list-B.vue'
+
+const IMGS = [
+  "dist/test1.jpg",
+  "dist/test2.jpg",
+  "dist/test3.jpg",
+  "dist/test4.jpg",
+  "dist/test0.jpg",
+  "dist/test5.jpg",
+  "dist/test6.jpg",
+  "dist/test7.jpg",
+  "dist/test8.jpg",
+  "dist/test9.jpg",
+  "dist/test10.jpg",
+  "dist/test11.jpg",
+  "dist/test12.jpg",
+  "http://covteam.u.qiniudn.com/test16.jpg",
+  "http://covteam.u.qiniudn.com/test14.jpg",
+  "http://covteam.u.qiniudn.com/test15.jpg",
+  "http://covteam.u.qiniudn.com/test16.jpg",
+  "http://covteam.u.qiniudn.com/test17.jpg",
+  "http://covteam.u.qiniudn.com/test18.jpg",
+  "http://covteam.u.qiniudn.com/test19.jpg",
+  "http://covteam.u.qiniudn.com/test20.jpg",
+  "http://covteam.u.qiniudn.com/test21.jpg"
+]
+
+const getList = (imgs) => {
+  let list = []
+  imgs.forEach((img, index) => {
+    list.push({
+      src: img,
+      id: index
+    })
+  })
+  return list
+}
+
 export default {
   data () {
     return {
       index: 1,
       show: true,
-      list: [
-        "dist/test1.jpg",
-        "dist/test2.jpg",
-        "dist/test3.jpg",
-        "dist/test4.jpg",
-        "dist/test0.jpg",
-        "dist/test5.jpg",
-        "dist/test6.jpg",
-        "dist/test7.jpg",
-        "dist/test8.jpg",
-        "dist/test9.jpg",
-        "dist/test10.jpg",
-        "dist/test11.jpg",
-        "dist/test12.jpg",
-        "http://covteam.u.qiniudn.com/test16.jpg",
-        "http://covteam.u.qiniudn.com/test14.jpg",
-        "http://covteam.u.qiniudn.com/test15.jpg",
-        "http://covteam.u.qiniudn.com/test16.jpg",
-        "http://covteam.u.qiniudn.com/test17.jpg",
-        "http://covteam.u.qiniudn.com/test18.jpg",
-        "http://covteam.u.qiniudn.com/test19.jpg",
-        "http://covteam.u.qiniudn.com/test20.jpg",
-        "http://covteam.u.qiniudn.com/test21.jpg"
-      ]
+      list: getList(IMGS)
     }
   },
   components: {
@@ -267,6 +294,11 @@ export default {
     ListB
   },
   methods: {
+    sortAction () {
+      this.list = this.list.sort((a, b) => {
+        return Math.random() > .5
+      })
+    },
     deleteAction (img) {
       let index = this.list.indexOf(img)
       this.list.splice(index, 1)
