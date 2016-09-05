@@ -1,11 +1,11 @@
 <template>
   <div class="img-list">
-    <ul id="test">
+    <transition-group name="flip-list" tag="ul">
       <li v-for="img in list" @click="delMe(img)" :key="img.id">
-        <img v-lazy.test="img.src" :data="img.src" width="100%" height="400">
+        <img v-lazy="img.src" :data="img.src" width="100%" height="400">
         <span class="box-title"> ID: {{img.id}} src: {{img.src}} </span>
       </li>
-    </ul>
+    </transition-group>
   </div>
 </template>
 
@@ -15,8 +15,11 @@ export default {
     list: Array
   },
   methods: {
+    removeTop (e) {
+      this.$emit('delete', this.list[0])
+    },
     delMe (img) {
-      console.log(img)
+      console.log(this.$options)
       this.$emit('delete', img)
     }
   }

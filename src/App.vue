@@ -150,7 +150,6 @@ img[lazy=error] {
   color: #fff;
   font-size: 1rem;
   background: #8BC34A;
-  width: 6rem;
   border-radius: 2px;
   top: .5rem;
   height: 2rem;
@@ -190,6 +189,9 @@ img[lazy=error] {
   .github-text {
     display: none;
   }
+  .header-center {
+    display: none;
+  }
   .switch-header {
     text-align: left;
     padding-left: 3rem;
@@ -207,6 +209,29 @@ img[lazy=error] {
     min-height: 20em;
   }
 }
+.flip-list-move {
+  transition: transform 1s;
+}
+.content {
+  position: relative;
+  height: 18px;
+}
+.content .img-list {
+  position: absolute;
+  width: 100%;
+}
+.in-out-translate-fade-enter-active, .in-out-translate-fade-leave-active {
+  transition: all .5s;
+}
+.in-out-translate-fade-enter, .in-out-translate-fade-leave-active {
+  opacity: 0;
+}
+.in-out-translate-fade-enter {
+  transform: translate3d(100%, 0, 0);
+}
+.in-out-translate-fade-leave-active {
+  transform: translate3d(-100%, 0, 0);
+}
 </style>
 
 <template>
@@ -221,7 +246,7 @@ img[lazy=error] {
         </a>
       </div>
       <div class="header-center">
-        <span>{{ show ? 'Using img tag' : 'Using style background-image'}}</span>
+        <span>{{ !show ? 'Using img tag' : 'Using style background-image'}}</span>
       </div>
       <div class="header-left">
         <button 
@@ -231,12 +256,14 @@ img[lazy=error] {
         <button 
           class="switch-btn" 
           @click="sortAction"
-        >Sort</button>
+        >Shuffle</button>
       </div>
     </div>
     <div class="content">
-      <list-a :list="list" v-if="show" @delete="deleteAction"></list-a>
-      <list-b :list="list" v-if="!show" @delete="deleteAction"></list-b>
+      <transition name="in-out-translate-fade" mode="out-in">
+        <list-a :list="list" v-if="!show" @delete="deleteAction"></list-a>
+        <list-b :list="list" v-else @delete="deleteAction"></list-b>
+      </transition>
     </div>
   </div>
 </template>
@@ -295,11 +322,13 @@ export default {
   },
   methods: {
     sortAction () {
+      console.time('233')
       this.list = this.list.sort((a, b) => {
         return Math.random() > .5
       })
     },
     deleteAction (img) {
+      console.time('del')
       let index = this.list.indexOf(img)
       this.list.splice(index, 1)
     }
