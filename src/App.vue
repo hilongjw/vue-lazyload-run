@@ -322,13 +322,11 @@ export default {
   },
   methods: {
     sortAction () {
-      console.time('233')
       this.list = this.list.sort((a, b) => {
-        return Math.random() > .5
+        return Math.random() - 0.5
       })
     },
     deleteAction (img) {
-      console.time('del')
       let index = this.list.indexOf(img)
       this.list.splice(index, 1)
     }
