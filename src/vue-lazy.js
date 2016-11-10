@@ -209,7 +209,10 @@ export default (Vue, Options = {}) => {
     if (isVueNext) {
         Vue.directive('lazy', {
             bind: addListener,
-            update: addListener,
+            update (el, binding, vnode) {
+                console.log('from update')
+                // addListener(el, binding, vnode)
+            },
             inserted: addListener,
             componentUpdated: lazyLoadHandler,
             unbind : componentWillUnmount

@@ -149,13 +149,14 @@ img[lazy=error] {
 .switch-btn {
   border: none;
   color: #fff;
-  font-size: 1rem;
+  font-size: 12px;
   background: #8BC34A;
   border-radius: 2px;
   top: .5rem;
   height: 2rem;
   right: .5rem;
   transition: background .2s;
+  min-width: 4rem;
 }
 .switch-btn:hover {
   background: #a5e856;
@@ -249,6 +250,14 @@ img[lazy=error] {
       <div class="header-left">
         <button 
           class="switch-btn" 
+          @click="update"
+        >Update</button>
+        <button 
+          class="switch-btn" 
+          @click="addOne"
+        >Add</button>
+        <button 
+          class="switch-btn" 
           @click="show = !show"
         >Switch</button>
         <button 
@@ -324,6 +333,20 @@ export default {
     sortAction () {
       this.list = this.list.sort((a, b) => {
         return Math.random() - 0.5
+      })
+    },
+    update () {
+      this.list.forEach(item => {
+        item.id = Date.now()
+        item.src = 'dist/test' + 1 + Math.floor(Math.random() * 9) + '.jpg'
+      })
+    },
+    addOne () {
+      this.list.unshift({
+        src: 'dist/test' + 1 + Math.floor(Math.random() * 12) + '.jpg',
+        id: Date.now(),
+        error: 'dist/404.png',
+        loading: 'dist/loading-spin.svg'
       })
     },
     deleteAction (img) {
