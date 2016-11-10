@@ -3,7 +3,6 @@
     <transition-group name="flip-list" tag="ul">
       <li v-for="img in list" @click="delMe(img)" :key="img.id">
         <img v-lazy="img.src" :data="img.src" width="100%" height="400">
-        <span class="box-title"> ID: {{img.id}} src: {{img.src}} </span>
       </li>
     </transition-group>
   </div>

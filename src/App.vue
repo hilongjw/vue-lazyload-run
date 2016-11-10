@@ -108,8 +108,9 @@ img[lazy=error] {
   top: 50%;
 }
 .bg-box {
-  height: 30em;
+  height: 0;
   background-size: cover;
+  padding-bottom: 100%;
 }
 .bg-box[lazy=loading] {
   background-size: 10%;
@@ -205,9 +206,6 @@ img[lazy=error] {
   .box-title {
     display: none;
   }
-  .bg-box {
-    min-height: 20em;
-  }
 }
 .flip-list-move {
   transition: transform 1s;
@@ -302,7 +300,9 @@ const getList = (imgs) => {
   imgs.forEach((img, index) => {
     list.push({
       src: img,
-      id: index
+      id: index,
+      error: 'dist/404.png',
+      loading: 'dist/loading-spin.svg'
     })
   })
   return list

@@ -1,29 +1,43 @@
-'use strict';
+/*!
+ * Vue-Lazyload.js v0.9.0
+ * (c) 2016 Awe <hilongjw@gmail.com>
+ * Released under the MIT License.
+ */
+(function (global, factory) {
+    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+    typeof define === 'function' && define.amd ? define(factory) :
+    (global.install = factory());
+}(this, (function () { 'use strict';
 
-var Promise = require('es6-promise').Promise;
+var inBrowser = typeof window !== 'undefined';
 
-exports.install = function (Vue, Options) {
+if (!Array.prototype.$remove) {
+    Array.prototype.$remove = function (item) {
+        if (!this.length) return;
+        var index = this.indexOf(item);
+        if (index > -1) {
+            return this.splice(index, 1);
+        }
+    };
+}
+
+var vueLazyload = (function (Vue) {
+    var Options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
     var isVueNext = Vue.version.split('.')[0] === '2';
-    var DEFAULT_PRE = 1.3;
     var DEFAULT_URL = 'data:img/jpg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEXs7Oxc9QatAAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg==';
-    if (!Options) {
-        Options = {
-            preLoad: DEFAULT_PRE,
-            error: DEFAULT_URL,
-            loading: DEFAULT_URL,
-            try: 3
-        };
-    }
+
     var Init = {
-        preLoad: Options.preLoad || DEFAULT_PRE,
-        error: Options.error ? Options.error : DEFAULT_URL,
-        loading: Options.loading ? Options.loading : DEFAULT_URL,
-        hasbind: false,
-        try: Options.try ? Options.try : 1
+        preLoad: Options.preLoad || 1.3,
+        error: Options.error || DEFAULT_URL,
+        loading: Options.loading || DEFAULT_URL,
+        attempt: Options.attempt || 3,
+        scale: Options.scale || inBrowser ? window.devicePixelRatio : 1,
+        hasbind: false
     };
 
     var Listeners = [];
-    var Loaded = [];
+    var imageCache = [];
 
     var throttle = function throttle(action, delay) {
         var timeout = null;
@@ -32,15 +46,14 @@ exports.install = function (Vue, Options) {
             if (timeout) {
                 return;
             }
-            var elapsed = +new Date() - lastRun;
+            var elapsed = Date.now() - lastRun;
             var context = this;
             var args = arguments;
             var runCallback = function runCallback() {
-                lastRun = +new Date();
+                lastRun = Date.now();
                 timeout = false;
                 action.apply(context, args);
             };
-
             if (elapsed >= delay) {
                 runCallback();
             } else {
@@ -50,11 +63,11 @@ exports.install = function (Vue, Options) {
     };
 
     var _ = {
-        on: function on(type, func) {
-            window.addEventListener(type, func);
+        on: function on(el, type, func) {
+            el.addEventListener(type, func);
         },
-        off: function off(type, func) {
-            window.removeEventListener(type, func);
+        off: function off(el, type, func) {
+            el.removeEventListener(type, func);
         }
     };
 
@@ -64,30 +77,30 @@ exports.install = function (Vue, Options) {
         }
     }, 300);
 
-    var onListen = function onListen(start) {
+    var onListen = function onListen(el, start) {
         if (start) {
-            _.on('scroll', lazyLoadHandler);
-            _.on('wheel', lazyLoadHandler);
-            _.on('mousewheel', lazyLoadHandler);
-            _.on('resize', lazyLoadHandler);
-            _.on('animationend', lazyLoadHandler);
-            _.on('transitionend', lazyLoadHandler);
+            _.on(el, 'scroll', lazyLoadHandler);
+            _.on(el, 'wheel', lazyLoadHandler);
+            _.on(el, 'mousewheel', lazyLoadHandler);
+            _.on(el, 'resize', lazyLoadHandler);
+            _.on(el, 'animationend', lazyLoadHandler);
+            _.on(el, 'transitionend', lazyLoadHandler);
         } else {
             Init.hasbind = false;
-            _.off('scroll', lazyLoadHandler);
-            _.off('wheel', lazyLoadHandler);
-            _.off('mousewheel', lazyLoadHandler);
-            _.off('resize', lazyLoadHandler);
-            _.off('animationend', lazyLoadHandler);
-            _.on('transitionend', lazyLoadHandler);
+            _.off(el, 'scroll', lazyLoadHandler);
+            _.off(el, 'wheel', lazyLoadHandler);
+            _.off(el, 'mousewheel', lazyLoadHandler);
+            _.off(el, 'resize', lazyLoadHandler);
+            _.off(el, 'animationend', lazyLoadHandler);
+            _.off(el, 'transitionend', lazyLoadHandler);
         }
     };
 
     var checkCanShow = function checkCanShow(listener) {
-        if (Loaded.indexOf(listener.src) > -1) return setElRender(listener.el, listener.bindType, listener.src, 'loaded');
+        if (imageCache.indexOf(listener.src) > -1) return setElRender(listener.el, listener.bindType, listener.src, 'loaded');
         var rect = listener.el.getBoundingClientRect();
 
-        if (rect.top < window.innerHeight * Init.preLoad && rect.bottom > 0) {
+        if (rect.top < window.innerHeight * Init.preLoad && rect.bottom > 0 && rect.left < window.innerWidth * Init.preLoad && rect.right > 0) {
             render(listener);
         }
     };
@@ -102,36 +115,34 @@ exports.install = function (Vue, Options) {
     };
 
     var render = function render(item) {
-        if (item.try >= Init.try) {
-            return false;
-        }
-        item.try++;
+        if (item.attempt >= Init.attempt) return false;
 
-        loadImageAsync(item).then(function (url) {
-            var index = Listeners.indexOf(item);
-            if (index !== -1) {
-                Listeners.splice(index, 1);
-            }
+        item.attempt++;
+
+        loadImageAsync(item, function (image) {
             setElRender(item.el, item.bindType, item.src, 'loaded');
-            Loaded.push(item.src);
-        }).catch(function (error) {
-            setElRender(item.el, item.bindType, Init.error, 'error');
+            imageCache.push(item.src);
+            Listeners.$remove(item);
+        }, function (error) {
+            setElRender(item.el, item.bindType, item.error, 'error');
         });
     };
 
-    var loadImageAsync = function loadImageAsync(item) {
-        return new Promise(function (resolve, reject) {
-            var image = new Image();
-            image.src = item.src;
+    var loadImageAsync = function loadImageAsync(item, resolve, reject) {
+        var image = new Image();
+        image.src = item.src;
 
-            image.onload = function () {
-                resolve(item.src);
-            };
+        image.onload = function () {
+            resolve({
+                naturalHeight: image.naturalHeight,
+                naturalWidth: image.naturalWidth,
+                src: item.src
+            });
+        };
 
-            image.onerror = function () {
-                reject();
-            };
-        });
+        image.onerror = function (e) {
+            reject(e);
+        };
     };
 
     var componentWillUnmount = function componentWillUnmount(el, binding, vnode, OldVnode) {
@@ -144,43 +155,64 @@ exports.install = function (Vue, Options) {
         }
 
         if (Init.hasbind && Listeners.length == 0) {
-            onListen(false);
+            onListen(window, false);
         }
+    };
+
+    var checkElExist = function checkElExist(el) {
+        var hasIt = false;
+
+        Listeners.forEach(function (item) {
+            if (item.el === el) hasIt = true;
+        });
+
+        if (hasIt) {
+            return Vue.nextTick(function () {
+                lazyLoadHandler();
+            });
+        }
+        return hasIt;
     };
 
     var addListener = function addListener(el, binding, vnode) {
         if (el.getAttribute('lazy') === 'loaded') return;
-        var hasIt = Listeners.find(function (item) {
-            return item.el === el;
-        });
-        if (hasIt) {
-            return Vue.nextTick(function () {
-                setTimeout(function () {
-                    lazyLoadHandler();
-                }, 0);
-            });
-        }
+        if (checkElExist(el)) return;
 
         var parentEl = null;
+        var imageSrc = binding.value;
+        var imageLoading = Init.loading;
+        var imageError = Init.error;
 
-        if (binding.modifiers) {
-            parentEl = window.document.getElementById(Object.keys(binding.modifiers)[0]);
+        if (typeof binding.value !== 'string' && binding.value) {
+            imageSrc = binding.value.src;
+            imageLoading = binding.value.loading || Init.loading;
+            imageError = binding.value.error || Init.error;
         }
 
-        setElRender(el, binding.arg, Init.loading, 'loading');
+        setElRender(el, binding.arg, imageLoading, 'loading');
 
         Vue.nextTick(function () {
+            if (binding.modifiers) {
+                parentEl = window.document.getElementById(Object.keys(binding.modifiers)[0]);
+            }
+
             Listeners.push({
                 bindType: binding.arg,
-                try: 0,
+                attempt: 0,
                 parentEl: parentEl,
                 el: el,
-                src: binding.value
+                error: imageError,
+                src: imageSrc
             });
             lazyLoadHandler();
+
             if (Listeners.length > 0 && !Init.hasbind) {
                 Init.hasbind = true;
-                onListen(true);
+                onListen(window, true);
+
+                if (parentEl) {
+                    onListen(parentEl, true);
+                }
             }
         });
     };
@@ -189,12 +221,13 @@ exports.install = function (Vue, Options) {
         Vue.directive('lazy', {
             bind: addListener,
             update: addListener,
+            inserted: addListener,
             componentUpdated: lazyLoadHandler,
             unbind: componentWillUnmount
         });
     } else {
         Vue.directive('lazy', {
-            bind: function bind() {},
+            bind: lazyLoadHandler,
             update: function update(newValue, oldValue) {
                 addListener(this.el, {
                     modifiers: this.modifiers,
@@ -208,4 +241,8 @@ exports.install = function (Vue, Options) {
             }
         });
     }
-};
+});
+
+return vueLazyload;
+
+})));
