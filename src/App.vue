@@ -310,8 +310,8 @@ const getList = (imgs) => {
     list.push({
       src: img,
       id: index,
-      error: 'dist/404.png',
-      loading: 'dist/loading-spin.svg'
+      // error: 'dist/404.png',
+      // loading: 'dist/loading-spin.svg'
     })
   })
   return list
@@ -320,16 +320,30 @@ const getList = (imgs) => {
 export default {
   data () {
     return {
+      loadedEl: [],
       index: 1,
       show: true,
       list: getList(IMGS)
     }
+  },
+  created () {
+    this.$Lazyload.$on('loaded', this.handler)
+    this.$Lazyload.$on('error', ({ el }) => {
+      console.log('error', el)
+    })
   },
   components: {
     ListA,
     ListB
   },
   methods: {
+    handler ({ el }) {
+      // if (this.loadedEl.indexOf(el) === -1) {
+        // this.loadedEl.push(el)
+        //console.count('loaded')
+        // console.log('loaded', el)
+      // }
+    },
     sortAction () {
       this.list = this.list.sort((a, b) => {
         return Math.random() - 0.5

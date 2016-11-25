@@ -1,8 +1,8 @@
 <template>
-  <div class="img-list">
+  <div class="img-list" id="box">
     <transition-group name="flip-list" tag="ul">
       <li v-for="img in list" @click="delMe(img)" :key="img.id">
-        <div v-lazy:background-image="img" class="bg-box"></div>
+        <div v-lazy:background-image.box="img" class="bg-box"></div>
       </li>
     </transition-group>
   </div>
