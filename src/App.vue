@@ -22,6 +22,11 @@ html, body {
   text-align: center;
 }
 
+#box {
+  height: calc(100vh - 3rem);
+  overflow: auto;
+}
+
 .box-title {
   line-height: 2;
 }
@@ -329,7 +334,7 @@ export default {
   created () {
     this.$Lazyload.$on('loaded', this.handler)
     this.$Lazyload.$on('error', ({ el }) => {
-      console.log('error', el)
+      console.log('from emit error')
     })
   },
   components: {
@@ -337,12 +342,8 @@ export default {
     ListB
   },
   methods: {
-    handler ({ el }) {
-      // if (this.loadedEl.indexOf(el) === -1) {
-        // this.loadedEl.push(el)
-        //console.count('loaded')
-        // console.log('loaded', el)
-      // }
+    handler (listener) {
+      console.log('from emit loaded', listener)
     },
     sortAction () {
       this.list = this.list.sort((a, b) => {
