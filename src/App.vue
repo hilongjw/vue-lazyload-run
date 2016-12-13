@@ -323,6 +323,7 @@ const getList = (imgs) => {
 }
 
 export default {
+  name: 'List',
   data () {
     return {
       loadedEl: [],
@@ -334,7 +335,7 @@ export default {
   created () {
     this.$Lazyload.$on('loaded', this.handler)
     this.$Lazyload.$on('error', ({ el }) => {
-      console.log('from emit error')
+      // console.log('from emit error')
     })
   },
   components: {
@@ -343,7 +344,7 @@ export default {
   },
   methods: {
     handler (listener) {
-      console.log('from emit loaded', listener)
+      // console.log('from emit loaded', listener)
     },
     sortAction () {
       this.list = this.list.sort((a, b) => {
@@ -352,7 +353,7 @@ export default {
     },
     update () {
       this.list.forEach(item => {
-        item.id = Date.now()
+        item.id = Date.now() + Math.floor(Math.random() * 10000)
         item.src = 'dist/test' + 1 + Math.floor(Math.random() * 9) + '.jpg'
       })
     },

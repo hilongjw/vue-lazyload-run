@@ -13,7 +13,7 @@ if (!Array.prototype.$remove) {
 export default (Vue, Options = {}) => {
     const isVueNext = Vue.version.split('.')[0] === '2'
     const DEFAULT_URL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-    const Listeners = []
+    const ListenerQueue = []
     const imageCache = []
 
     const $Lazyload = {
@@ -120,10 +120,17 @@ export default (Vue, Options = {}) => {
     }
 
     const lazyLoadHandler = throttle(() => {
-        for (let i = 0, len = Listeners.length; i < len; ++i) {
-            checkCanShow(Listeners[i])
+        for (let i = 0, len = ListenerQueue.length; i < len; ++i) {
+            checkCanShow(ListenerQueue[i])
         }
     }, 300)
+
+    const checkCanShow = (listener) => {
+        if (listener.state.loaded) return 
+        if (listener.checkInView()) {
+            listener.load()
+        }
+    }
 
     const onListen = (el, start) => {
         if (start) {
@@ -138,18 +145,8 @@ export default (Vue, Options = {}) => {
         }
     }
 
-    const checkCanShow = (listener) => {
-        if (imageCache.indexOf(listener.src) !== -1) return setElRender(listener, 'loaded')
-        let rect = listener.el.getBoundingClientRect()
-
-        if ((rect.top < window.innerHeight * Init.preLoad && rect.bottom > 0) && (rect.left < window.innerWidth * Init.preLoad && rect.right > 0)) {
-            render(listener)
-        }
-    }
-
-    const setElRender = (listener, state, emit) => {
-        const { el, bindType } = listener
-        let src = state === 'error' ? listener.error : listener.src
+    const setElRender = (data, state, notify) => {
+        const { el, bindType, src } = data
 
         if (!bindType) {
             if (el.getAttribute('src') !== src) {
@@ -161,29 +158,12 @@ export default (Vue, Options = {}) => {
 
         el.setAttribute('lazy', state)
 
-        if (emit) {
-            $Lazyload.$emit(state, listener)
+        if (notify) {
+            $Lazyload.$emit(state, data)
             if (Init.adapter[state]) {
-                Init.adapter[state](listener, Init)
+                Init.adapter[state](data, Init)
             }
         }
-    }
-
-    const render = (listener) => {
-        if (listener.attempt >= Init.attempt) return false
-        listener.attempt++
-
-        if (imageCache.indexOf(listener.src) !== -1) return setElRender(listener, 'loaded')
-        imageCache.push(listener.src)
-
-        loadImageAsync(listener, (image) => {
-                listener = Object.assign(listener, image)
-                setElRender(listener, 'loaded', true)
-                Listeners.$remove(listener)
-            }, (error) => {
-                imageCache.$remove(listener.src)
-                setElRender(listener, 'error', true)
-            })
     }
 
     const loadImageAsync = (item, resolve, reject) => {
@@ -206,13 +186,13 @@ export default (Vue, Options = {}) => {
     const componentWillUnmount = (el, binding, vnode, OldVnode) => {
         if (!el) return
 
-        for (let i = 0, len = Listeners.length; i < len; i++) {
-            if (Listeners[i] && Listeners[i].el === el) {
-                Listeners.splice(i, 1)
+        for (let i = 0, len = ListenerQueue.length; i < len; i++) {
+            if (ListenerQueue[i] && ListenerQueue[i].el === el) {
+                ListenerQueue.splice(i, 1)
             }
         }
 
-        if (Init.hasbind && Listeners.length == 0) {
+        if (Init.hasbind && ListenerQueue.length == 0) {
             onListen(window, false)
         }
     }
@@ -220,7 +200,7 @@ export default (Vue, Options = {}) => {
     const checkElExist = (el) => {
         let hasIt = false
 
-        Listeners.forEach((item) => {
+        ListenerQueue.forEach((item) => {
             if (item.el === el) hasIt = true
         })
 
@@ -242,11 +222,96 @@ export default (Vue, Options = {}) => {
         return listener
     }
 
+    class ReactiveListener {
+        constructor ({ el, src, error, loading, bindType, $parent }) {
+            this.el = el
+            this.src = src
+            this.error = error
+            this.loading = loading
+            this.bindType = bindType
+            this.attempt = 0
+
+            this.naturalHeight = 0
+            this.naturalWidth = 0
+
+            this.initState()
+
+            this.rect = el.getBoundingClientRect()
+
+            this.$parent = $parent
+        }
+
+        initState () {
+            this.state = {
+                error: false,
+                loaded: false,
+                rendered: false
+            }
+        }
+
+        update ({ src }) {
+            this.src = src
+            this.attempt = 0
+            this.initState()
+        }
+
+        getRect () {
+            this.rect = this.el.getBoundingClientRect()
+        }
+
+        checkInView () {
+            this.getRect()
+            return (this.rect.top < window.innerHeight * Init.preLoad && this.rect.bottom > 0) &&
+                (this.rect.left < window.innerWidth * Init.preLoad && this.rect.right > 0)
+        }
+
+        load () {
+            if (this.attempt > Init.attempt - 1) return this.render('error')
+            if (this.state.loaded) return this.render('loaded')
+
+            this.attempt++
+
+            loadImageAsync({
+                src: this.src
+            }, data => {
+                this.naturalHeight = data.naturalHeight
+                this.naturalWidth = data.naturalWidth
+                this.state.loaded = true
+                this.render('loaded', true)
+            }, err => {
+                this.state.error = true
+                this.render('error', true)
+            })
+        }
+
+        render (state, notify) {
+            let src
+            switch (state) {
+                case 'loading':
+                    src = this.loading
+                    break
+                case 'error':
+                    src = this.error
+                    break
+                default:
+                    src = this.src
+                    break
+            }
+
+            setElRender({
+                el: this.el, 
+                bindType: this.bindType,
+                src: src
+            }, state, notify)
+        }
+
+    }
+
     const addListener = (el, binding, vnode) => {
         if (el.getAttribute('lazy') === 'loaded') return
         if (checkElExist(el)) return
 
-        let parentEl = null
+        let $parent = null
         let imageSrc = binding.value
         let imageLoading = Init.loading
         let imageError = Init.error
@@ -269,37 +334,31 @@ export default (Vue, Options = {}) => {
             let parentId
             if (binding.modifiers) {
                 parentId = Object.keys(binding.modifiers)[0]
-                parentEl = window.document.getElementById(parentId)
+                $parent = window.document.getElementById(parentId)
             }
 
-            let listener = {
+            let listener = new ReactiveListener({
                 bindType: binding.arg,
-                parentId: parentId,
-                attempt: 0,
-                parentEl: parentEl,
+                $parent: $parent,
                 el: el,
+                loading: imageLoading,
                 error: imageError,
                 src: imageSrc
-            }
+            })
 
             listener = listenerFilter(listener)
+            listener.render('loading', true)
 
-            Listeners.push(listener)
-
-            setElRender({
-                el: el, 
-                bindType: binding.arg, 
-                src: imageLoading
-            }, 'loading', true)
+            ListenerQueue.push(listener)
 
             lazyLoadHandler()
 
-            if (Listeners.length > 0 && !Init.hasbind) {
+            if (ListenerQueue.length > 0 && !Init.hasbind) {
                 Init.hasbind = true
                 onListen(window, true)
 
-                if (parentEl) {
-                    onListen(parentEl, true)
+                if ($parent) {
+                    onListen($parent, true)
                 }
             }
         })

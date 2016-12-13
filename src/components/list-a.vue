@@ -10,6 +10,7 @@
 
 <script>
 export default {
+  name: 'ListA',
   props: {
     list: Array
   },
@@ -18,7 +19,6 @@ export default {
       this.$emit('delete', this.list[0])
     },
     delMe (img) {
-      console.log(this.$options)
       this.$emit('delete', img)
     }
   }
