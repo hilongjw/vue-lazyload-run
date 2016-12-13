@@ -12,13 +12,13 @@ Vue.use(vueLazy, {
     loading: 'dist/loading-spin.svg',
     adapter: {
         loaded (listender, Init) {
-            console.log('loaded')
+            // console.log('loaded')
         },
         loading (listender, Init) {
-            console.log('loading')
+            // console.log('loading')
         },
         error (listender, Init) {
-            console.log('error')
+            // console.log('error')
         }
     },
     filter: {
