@@ -1,24 +1,45 @@
 /*!
- * Vue-Lazyload.js v1.0.0-rc1
+ * Vue-Lazyload.js v1.0.0-rc5
  * (c) 2016 Awe <hilongjw@gmail.com>
  * Released under the MIT License.
  */
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-    typeof define === 'function' && define.amd ? define(factory) :
-    (global.install = factory());
-}(this, (function () { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('vue')) :
+    typeof define === 'function' && define.amd ? define(['vue'], factory) :
+    (global.install = factory(global.Vue));
+}(this, (function (Vue) { 'use strict';
+
+Vue = 'default' in Vue ? Vue['default'] : Vue;
 
 var inBrowser = typeof window !== 'undefined';
 
-if (!Array.prototype.$remove) {
-    Array.prototype.$remove = function (item) {
-        if (!this.length) return;
-        var index = this.indexOf(item);
-        if (index > -1) {
-            return this.splice(index, 1);
+function remove$1(arr, item) {
+    if (!arr.length) return console.log('no ?len?');
+    var index = arr.indexOf(item);
+    if (index > -1) return arr.splice(index, 1);
+}
+
+function some(arr, fn) {
+    var has = false;
+    for (var i = 0, len = arr.length; i < len; i++) {
+        if (fn(arr[i])) {
+            has = true;
+            break;
         }
-    };
+    }
+    console.log(has);
+    return has;
+}
+
+function find(arr, fn) {
+    var item = void 0;
+    for (var i = 0, len = arr.length; i < len; i++) {
+        if (fn(arr[i])) {
+            item = arr[i];
+            break;
+        }
+    }
+    return item;
 }
 
 function getDPR() {
@@ -98,9 +119,9 @@ var loadImageAsync = function loadImageAsync(item, resolve, reject) {
     };
 };
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+var _createClass$1 = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+function _classCallCheck$1(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var imageCache = {};
 
@@ -115,7 +136,7 @@ var ReactiveListener = function () {
         var Init = _ref.Init;
         var elRenderer = _ref.elRenderer;
 
-        _classCallCheck(this, ReactiveListener);
+        _classCallCheck$1(this, ReactiveListener);
 
         this.el = el;
         this.src = src;
@@ -137,7 +158,7 @@ var ReactiveListener = function () {
         this.elRenderer = elRenderer;
     }
 
-    _createClass(ReactiveListener, [{
+    _createClass$1(ReactiveListener, [{
         key: 'initState',
         value: function initState() {
             this.state = {
@@ -175,10 +196,14 @@ var ReactiveListener = function () {
         value: function load() {
             var _this = this;
 
-            if (this.attempt > this.Init.attempt - 1) return this.render('error');
+            if (this.attempt > this.Init.attempt - 1 && this.state.error) {
+                return console.log('error end');
+            }
+
             if (this.state.loaded || imageCache[this.src]) {
                 return this.render('loaded');
             }
+
             this.render('loading', true);
 
             this.attempt++;
@@ -189,10 +214,12 @@ var ReactiveListener = function () {
                 _this.naturalHeight = data.naturalHeight;
                 _this.naturalWidth = data.naturalWidth;
                 _this.state.loaded = true;
+                _this.state.error = false;
                 _this.render('loaded', true);
                 imageCache[_this.src] = 1;
             }, function (err) {
                 _this.state.error = true;
+                _this.state.loaded = false;
                 _this.render('error', true);
             });
         }
@@ -211,6 +238,7 @@ var ReactiveListener = function () {
                     src = this.src;
                     break;
             }
+
             this.elRenderer({
                 el: this.el,
                 bindType: this.bindType,
@@ -232,283 +260,260 @@ var ReactiveListener = function () {
     return ReactiveListener;
 }();
 
-var index = (function (Vue) {
-    var Options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-    var isVueNext = Vue.version.split('.')[0] === '2';
-    var DEFAULT_URL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-    var ListenerQueue = [];
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-    var Init = {
-        preLoad: Options.preLoad || 1.3,
-        error: Options.error || DEFAULT_URL,
-        loading: Options.loading || DEFAULT_URL,
-        attempt: Options.attempt || 3,
-        scale: getDPR(Options.scale),
-        ListenEvents: Options.listenEvents || ['scroll', 'wheel', 'mousewheel', 'resize', 'animationend', 'transitionend'],
-        hasbind: false,
-        supportWebp: supportWebp(),
-        filter: Options.filter || {},
-        adapter: Options.adapter || {}
-    };
+var isVueNext = Vue.version.split('.')[0] === '2';
+var DEFAULT_URL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+var DEFAULT_EVENTS = ['scroll', 'wheel', 'mousewheel', 'resize', 'animationend', 'transitionend'];
 
-    var $Lazyload = {
-        listeners: {
-            loading: [],
-            loaded: [],
-            error: []
-        },
-        $on: function $on(event, func) {
-            this.listeners[event].push(func);
-        },
-        $once: function $once(event, func) {
-            var vm = this;
-            function on() {
-                vm.$off(event, on);
-                func.apply(vm, arguments);
+var Lazy = function () {
+    function Lazy(_ref) {
+        var _this = this;
+
+        var preLoad = _ref.preLoad;
+        var error = _ref.error;
+        var loading = _ref.loading;
+        var attempt = _ref.attempt;
+        var scale = _ref.scale;
+        var listenEvents = _ref.listenEvents;
+        var hasbind = _ref.hasbind;
+        var filter = _ref.filter;
+        var adapter = _ref.adapter;
+
+        _classCallCheck(this, Lazy);
+
+        this.ListenerQueue = [];
+        this.options = {
+            preLoad: preLoad || 1.3,
+            error: error || DEFAULT_URL,
+            loading: loading || DEFAULT_URL,
+            attempt: attempt || 3,
+            scale: getDPR(scale),
+            ListenEvents: listenEvents || DEFAULT_EVENTS,
+            hasbind: false,
+            supportWebp: supportWebp(),
+            filter: filter || {},
+            adapter: adapter || {}
+        };
+        this.initEvent();
+
+        this.lazyLoadHandler = throttle(function () {
+            var catIn = false;
+            _this.ListenerQueue.forEach(function (listener) {
+                if (listener.state.loaded) return;
+                catIn = listener.checkInView();
+                catIn && listener.load();
+            });
+        }, 300);
+    }
+
+    _createClass(Lazy, [{
+        key: 'add',
+        value: function add(el, binding, vnode) {
+            var _this2 = this;
+
+            if (some(this.ListenerQueue, function (item) {
+                return item.el === el;
+            })) {
+                console.log('will update');
+                updateListener(el, binding);
+                return Vue.nextTick(this.lazyLoadHandler);
             }
-            this.$on(event, on);
-        },
-        $off: function $off(event, func) {
-            if (!func) {
-                this.listeners[event] = [];
-                return;
-            }
-            this.listeners[event].$remove(func);
-        },
-        $emit: function $emit(event, context) {
-            this.listeners[event].forEach(function (func) {
-                func(context);
+
+            var _valueFormater = this.valueFormater(binding.value);
+
+            var src = _valueFormater.src;
+            var loading = _valueFormater.loading;
+            var error = _valueFormater.error;
+
+
+            Vue.nextTick(function () {
+                var $parent = vnode.context.$refs[Object.keys(binding.modifiers)[0]];
+                $parent = $parent && $parent.$el || $parent;
+
+                _this2.ListenerQueue.push(_this2.listenerFilter(new ReactiveListener({
+                    bindType: binding.arg,
+                    $parent: $parent,
+                    el: el,
+                    loading: loading,
+                    error: error,
+                    src: src,
+                    elRenderer: _this2.elRenderer.bind(_this2),
+                    Init: _this2.options
+                })));
+
+                if (!_this2.ListenerQueue.length || _this2.options.hasbind) return;
+
+                _this2.options.hasbind = true;
+                _this2.initListen(window, true);
+                $parent && _this2.initListen($parent, true);
+                Vue.nextTick(function () {
+                    _this2.lazyLoadHandler();
+                });
             });
         }
-    };
+    }, {
+        key: 'update',
+        value: function update(el, binding) {
+            var _valueFormater2 = this.valueFormater(binding.value);
 
-    var lazyLoadHandler = throttle(function () {
-        for (var i = 0, len = ListenerQueue.length; i < len; ++i) {
-            checkCanShow(ListenerQueue[i]);
-        }
-    }, 300);
+            var src = _valueFormater2.src;
+            var loading = _valueFormater2.loading;
+            var error = _valueFormater2.error;
 
-    var checkCanShow = function checkCanShow(listener) {
-        if (listener.state.loaded) return;
-        if (listener.checkInView()) {
-            listener.load();
-        }
-    };
 
-    var onListen = function onListen(el, start) {
-        if (start) {
-            Init.ListenEvents.forEach(function (evt) {
-                _.on(el, evt, lazyLoadHandler);
+            var exist = find(this.ListenerQueue, function (item) {
+                return item.el === el;
             });
-        } else {
-            Init.hasbind = false;
-            Init.ListenEvents.forEach(function (evt) {
-                _.off(el, evt, lazyLoadHandler);
+
+            exist && exist.src !== src && exist.update({
+                src: src,
+                loading: loading,
+                error: error
             });
         }
-    };
-
-    var componentWillUnmount = function componentWillUnmount(el, binding, vnode, OldVnode) {
-        if (!el) return;
-
-        for (var i = 0, len = ListenerQueue.length; i < len; i++) {
-            if (ListenerQueue[i] && ListenerQueue[i].el === el) {
-                ListenerQueue[i].destroy();
-                ListenerQueue.splice(i, 1);
-            }
+    }, {
+        key: 'remove',
+        value: function remove(el) {
+            if (!el) return;
+            var existItem = find(this.ListenerQueue, function (item) {
+                return item.el === el;
+            });
+            existItem && remove$1(this.ListenerQueue, existItem) && existItem.destroy();
+            this.options.hasbind && !this.ListenerQueue.length && this.initListen(window, false);
         }
+    }, {
+        key: 'initListen',
+        value: function initListen(el, start) {
+            var _this3 = this;
 
-        if (Init.hasbind && ListenerQueue.length == 0) {
-            onListen(window, false);
+            this.options.hasbind = start;
+            this.options.ListenEvents.forEach(function (evt) {
+                _[start ? 'on' : 'off'](el, evt, _this3.lazyLoadHandler);
+            });
         }
-    };
-
-    var checkElExist = function checkElExist(el) {
-        var hasIt = false;
-
-        var _iteratorNormalCompletion = true;
-        var _didIteratorError = false;
-        var _iteratorError = undefined;
-
-        try {
-            for (var _iterator = ListenerQueue[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                var item = _step.value;
-
-                if (item.el === el) {
-                    hasIt = true;
-                    break;
+    }, {
+        key: 'initEvent',
+        value: function initEvent() {
+            this.Event = {
+                listeners: {
+                    loading: [],
+                    loaded: [],
+                    error: []
+                },
+                $on: function $on(event, func) {
+                    this.listeners[event].push(func);
+                },
+                $once: function $once(event, func) {
+                    var vm = this;
+                    function on() {
+                        vm.$off(event, on);
+                        func.apply(vm, arguments);
+                    }
+                    this.$on(event, on);
+                },
+                $off: function $off(event, func) {
+                    if (!func) {
+                        this.listeners[event] = [];
+                        return;
+                    }
+                    remove$1(this.listeners[event], func);
+                },
+                $emit: function $emit(event, context) {
+                    this.listeners[event].forEach(function (func) {
+                        func(context);
+                    });
                 }
-            }
-        } catch (err) {
-            _didIteratorError = true;
-            _iteratorError = err;
-        } finally {
-            try {
-                if (!_iteratorNormalCompletion && _iterator.return) {
-                    _iterator.return();
-                }
-            } finally {
-                if (_didIteratorError) {
-                    throw _iteratorError;
-                }
-            }
+            };
         }
-
-        return hasIt;
-    };
-
-    var elRenderer = function elRenderer(data, state, notify) {
-        var el = data.el;
-        var bindType = data.bindType;
-        var src = data.src;
+    }, {
+        key: 'elRenderer',
+        value: function elRenderer(data, state, notify) {
+            var el = data.el;
+            var bindType = data.bindType;
+            var src = data.src;
 
 
-        if (!bindType) {
-            if (el.getAttribute('src') !== src) {
+            if (bindType) {
+                el.style[bindType] = 'url(' + src + ')';
+            } else if (el.getAttribute('src') !== src) {
                 el.setAttribute('src', src);
             }
-        } else {
-            el.style[bindType] = 'url(' + src + ')';
+
+            el.setAttribute('lazy', state);
+
+            if (!notify) return;
+            this.Event.$emit(state, data);
+            this.options.adapter[state] && this.options.adapter[state](data, this.options);
         }
-
-        el.setAttribute('lazy', state);
-
-        if (notify) {
-            $Lazyload.$emit(state, data);
-            if (Init.adapter[state]) {
-                Init.adapter[state](data, Init);
+    }, {
+        key: 'listenerFilter',
+        value: function listenerFilter(listener) {
+            if (this.options.filter.webp && this.options.supportWebp) {
+                listener.src = this.options.filter.webp(listener, this.options);
             }
-        }
-    };
-
-    function listenerFilter(listener) {
-        if (Init.filter.webp && Init.supportWebp) {
-            listener.src = Init.filter.webp(listener, Init);
-        }
-        if (Init.filter.customer) {
-            listener.src = Init.filter.customer(listener, Init);
-        }
-        return listener;
-    }
-
-    function valueFormater(value) {
-        var src = value;
-        var loading = Init.loading;
-        var error = Init.error;
-
-        if (value && typeof value !== 'string') {
-            if (!value.src) console.error('miss src with ', value);
-            src = value.src;
-            loading = value.loading || Init.loading;
-            error = value.error || Init.error;
-        }
-
-        return {
-            src: src,
-            loading: loading,
-            error: error
-        };
-    }
-
-    var addListener = function addListener(el, binding, vnode) {
-        if (checkElExist(el)) {
-            updateListener(el, binding);
-            return Vue.nextTick(function () {
-                lazyLoadHandler();
-            });
-        }
-
-        var $parent = null;
-
-        var _valueFormater = valueFormater(binding.value);
-
-        var src = _valueFormater.src;
-        var loading = _valueFormater.loading;
-        var error = _valueFormater.error;
-
-
-        Vue.nextTick(function () {
-            var parentId = void 0;
-            if (binding.modifiers) {
-                parentId = Object.keys(binding.modifiers)[0];
-                $parent = window.document.getElementById(parentId);
+            if (this.options.filter.customer) {
+                listener.src = this.options.filter.customer(listener, this.options);
             }
+            return listener;
+        }
+    }, {
+        key: 'valueFormater',
+        value: function valueFormater(value) {
+            var src = value;
+            var loading = this.options.loading;
+            var error = this.options.error;
 
-            var listener = new ReactiveListener({
-                bindType: binding.arg,
-                $parent: $parent,
-                el: el,
-                loading: loading,
-                error: error,
+            if (Vue.util.isObject(value)) {
+                if (!value.src) Vue.util.warn('Vue Lazyload warning: miss src with ' + value);
+                src = value.src;
+                loading = value.loading || this.options.loading;
+                error = value.error || this.options.error;
+            }
+            return {
                 src: src,
-                Init: Init,
-                elRenderer: elRenderer
-            });
-
-            listener = listenerFilter(listener);
-
-            ListenerQueue.push(listener);
-
-            lazyLoadHandler();
-
-            if (ListenerQueue.length > 0 && !Init.hasbind) {
-                Init.hasbind = true;
-                onListen(window, true);
-
-                if ($parent) {
-                    onListen($parent, true);
-                }
-            }
-        });
-    };
-
-    var updateListener = function updateListener(el, binding) {
-        var _valueFormater2 = valueFormater(binding.value);
-
-        var src = _valueFormater2.src;
-        var loading = _valueFormater2.loading;
-        var error = _valueFormater2.error;
-
-
-        for (var i = 0, len = ListenerQueue.length; i < len; i++) {
-            if (ListenerQueue[i] && ListenerQueue[i].el === el) {
-                if (ListenerQueue[i].src !== src) {
-                    ListenerQueue[i].update({
-                        src: src,
-                        loading: loading,
-                        error: error
-                    });
-                    console.log('changed');
-                }
-                break;
-            }
+                loading: loading,
+                error: error
+            };
         }
-    };
+    }]);
 
-    Vue.prototype.$Lazyload = $Lazyload;
+    return Lazy;
+}();
+
+var index = (function (Vue$$1) {
+    var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+    var lazy = new Lazy(options);
+    var isVueNext = Vue$$1.version.split('.')[0] === '2';
+
+    Vue$$1.prototype.$Lazyload = lazy;
 
     if (isVueNext) {
-        Vue.directive('lazy', {
-            bind: addListener,
-            update: updateListener,
-            inserted: addListener,
-            componentUpdated: lazyLoadHandler,
-            unbind: componentWillUnmount
+        Vue$$1.directive('lazy', {
+            bind: lazy.add.bind(lazy),
+            update: lazy.update.bind(lazy),
+            componentUpdated: lazy.lazyLoadHandler.bind(lazy),
+            unbind: lazy.remove.bind(lazy)
         });
     } else {
-        Vue.directive('lazy', {
-            bind: lazyLoadHandler,
+        Vue$$1.directive('lazy', {
+            bind: lazy.lazyLoadHandler.bind(lazy),
             update: function update(newValue, oldValue) {
-                addListener(this.el, {
-                    modifiers: this.modifiers,
+                Object.assign(this.$refs, this.$els);
+                lazy.add(this.el, {
+                    modifiers: this.modifiers || {},
                     arg: this.arg,
                     value: newValue,
                     oldValue: oldValue
+                }, {
+                    context: this
                 });
             },
             unbind: function unbind() {
-                componentWillUnmount(this.el);
+                lazy.remove(this.el);
             }
         });
     }

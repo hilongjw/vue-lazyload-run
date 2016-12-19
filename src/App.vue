@@ -333,10 +333,11 @@ export default {
     }
   },
   created () {
-    this.$Lazyload.$on('loaded', this.handler)
-    this.$Lazyload.$on('error', ({ el }) => {
+    this.$Lazyload.Event.$on('loaded', this.handler)
+    this.$Lazyload.Event.$on('error', ({ el }) => {
       // console.log('from emit error')
     })
+    console.log(this.$Lazyload)
   },
   components: {
     ListA,

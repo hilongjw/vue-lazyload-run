@@ -10,6 +10,7 @@ Vue.use(vueLazy, {
     preLoad: 1.3,
     error: 'dist/404.png',
     loading: 'dist/loading-spin.svg',
+    listenEvents: ['scroll'],
     adapter: {
         loaded (listender, Init) {
             // console.log('loaded')
