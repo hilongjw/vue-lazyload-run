@@ -236,6 +236,9 @@ img[lazy=error] {
 .in-out-translate-fade-leave-active {
   transform: translate3d(-100%, 0, 0);
 }
+.cov {
+  min-height: 10rem;
+}
 </style>
 
 <template>
