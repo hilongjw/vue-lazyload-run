@@ -56,7 +56,7 @@ html, body {
   }
 }
 
-img[lazy=loaded] {
+.lazy-img-fadein[lazy=loaded] {
   -webkit-animation-duration: 1s;
   animation-duration: 1s;
   -webkit-animation-fill-mode: both;
@@ -65,12 +65,12 @@ img[lazy=loaded] {
   animation-name: fadeIn;
 }
 
-img[lazy=loading] {
+.lazy-img-fadein[lazy=loading] {
   width: 40px!important;
   margin: auto;
 }
 
-img[lazy=error] {
+.lazy-img-fadein[lazy=error] {
   border-radius: 2px;
   -webkit-animation-duration: 1s;
   animation-duration: 1s;
@@ -253,7 +253,7 @@ img[lazy=error] {
         </a>
       </div>
       <div class="header-center">
-        <span>{{ !show ? 'Using img tag' : 'Using style background-image'}}</span>
+        <span>{{ (state === 'a') ? 'Using img tag' : 'Using style background-image'}}</span>
       </div>
       <div class="header-left">
         <button 
@@ -266,7 +266,7 @@ img[lazy=error] {
         >Add</button>
         <button 
           class="switch-btn" 
-          @click="show = !show"
+          @click="toggle"
         >Switch</button>
         <button 
           class="switch-btn" 
@@ -276,8 +276,9 @@ img[lazy=error] {
     </div>
     <div class="content">
       <transition name="in-out-translate-fade" mode="out-in">
-        <list-a :list="list" v-if="!show" @delete="deleteAction"></list-a>
-        <list-b :list="list" v-else @delete="deleteAction"></list-b>
+        <list-a :list="list" v-if="state === 'a'" @delete="deleteAction"></list-a>
+        <list-b :list="list" v-else  @delete="deleteAction"></list-b>
+        <!-- <list-c :list="list" v-else></list-c> -->
       </transition>
     </div>
   </div>
@@ -286,6 +287,9 @@ img[lazy=error] {
 <script>
 import ListA from './components/list-a.vue'
 import ListB from './components/list-B.vue'
+import ListC from './components/list-c.vue'
+
+import avatars from '../dist/avatar/avatar'
 
 const IMGS = [
   "dist/test1.jpg",
@@ -312,6 +316,29 @@ const IMGS = [
   "http://covteam.u.qiniudn.com/test21.jpg"
 ]
 
+const SEEM_IMGS = [
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg",
+  "dist/test1.jpg"
+]
+
 const getList = (imgs) => {
   let list = []
   imgs.forEach((img, index) => {
@@ -325,30 +352,70 @@ const getList = (imgs) => {
   return list
 }
 
+function getAvatarList () {
+  let list = []
+
+  avatars.forEach((user, index) => {
+    list.push({
+      src: 'dist/avatar/large/' + user.avatar,
+      id: user.avatar,
+      // error: 'dist/404.png',
+      // loading: 'dist/loading-spin.svg'
+    })
+  })
+
+  return list
+}
+
 export default {
   name: 'List',
   data () {
     return {
       loadedEl: [],
       index: 1,
-      show: true,
-      list: getList(IMGS)
+      state: 'a',
+      list: [] // getList(IMGS)
     }
   },
   created () {
-    this.$Lazyload.Event.$on('loaded', this.handler)
-    this.$Lazyload.Event.$on('error', ({ el }) => {
+    this.$Lazyload.config({
+      // loading: 'http://covteam.u.qiniudn.com/test19.jpg'
+    })
+    this.$Lazyload.$on('loaded', this.handler)
+    this.$Lazyload.$on('error', ({ el }) => {
       // console.log('from emit error')
     })
+    setTimeout(() => {
+      this.list = getList(IMGS) // getAvatarList()
+    }, 1000)
     console.log(this.$Lazyload)
   },
   components: {
     ListA,
-    ListB
+    ListB,
+    ListC
+  },
+  mounted () {
+
   },
   methods: {
-    handler (listener) {
-      // console.log('from emit loaded', listener)
+    toggle () {
+      let result
+      switch (this.state) {
+        case 'a':
+          result = 'b'
+          break
+        case 'b':
+          result = 'a'
+          break
+        case 'c':
+          result = 'a'
+          break
+      }
+      this.state = result
+    },
+    handler (listener, fromCache) {
+      if (!fromCache) console.log(listener)
     },
     sortAction () {
       this.list = this.list.sort((a, b) => {

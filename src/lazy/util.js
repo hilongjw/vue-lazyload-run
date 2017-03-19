@@ -27,6 +27,65 @@ function some (arr, fn) {
     return has
 }
 
+function getBestSelectionFromSrcset (el, scale) {
+    if (el.tagName !== 'IMG' || !el.getAttribute('data-srcset')) return
+
+    let options = el.getAttribute('data-srcset')
+    const result = []
+    const container = el.parentNode
+    const containerWidth = container.offsetWidth * scale
+
+    let spaceIndex
+    let tmpSrc
+    let tmpWidth
+
+    options = options.trim().split(',')
+    
+    options.map(item => {
+        item = item.trim()
+        spaceIndex = item.lastIndexOf(' ')
+        if (spaceIndex === -1) {
+            tmpSrc = item
+            tmpWidth = 999998
+        } else {
+            tmpSrc = item.substr(0, spaceIndex)
+            tmpWidth = parseInt(item.substr(spaceIndex + 1, item.length - spaceIndex - 2), 10)
+        }
+        result.push([tmpWidth, tmpSrc])
+    })
+
+    result.sort(function (a, b) {
+        if (a[0] < b[0]) {
+            return -1
+        }
+        if (a[0] > b[0]) {
+            return 1
+        }
+        if (a[0] === b[0]) {
+            if (b[1].indexOf('.webp', b[1].length - 5) !== -1) {
+                return 1
+            }
+            if (a[1].indexOf('.webp', a[1].length - 5) !== -1) {
+                return -1
+            }
+        }
+        return 0
+    })
+    let bestSelectedSrc = ''
+    let tmpOption
+    const resultCount = result.length
+
+    for (let i = 0; i < resultCount; i++) {
+        tmpOption = result[i]
+        if (tmpOption[0] >= containerWidth) {
+            bestSelectedSrc = tmpOption[1]
+            break
+        }
+    }
+
+    return bestSelectedSrc
+}
+
 function find (arr, fn) {
     let item
     for (let i = 0, len = arr.length; i < len; i++) {
@@ -41,6 +100,8 @@ function find (arr, fn) {
 const getDPR = (scale = 1) => inBrowser && window.devicePixelRatio || scale
 
 function supportWebp () {
+    if (!inBrowser) return false
+
     let support = true
     const d = document
 
@@ -82,9 +143,31 @@ function throttle (action, delay) {
     }
 }
 
+function testSupportsPassive () {
+    if (!inBrowser) return
+    let support = false
+    try {
+        let opts = Object.defineProperty({}, 'passive', {
+            get: function() {
+              support = true
+            }
+        })
+        window.addEventListener("test", null, opts)
+    } catch (e) {}
+    return support
+}
+
+const supportsPassive = testSupportsPassive()
+
 const _ = {
     on (el, type, func) {
-        el.addEventListener(type, func)
+        if (supportsPassive) {
+            el.addEventListener(type, func, {
+                passive:true
+            })
+        } else {
+            el.addEventListener(type, func, false)
+        }
     },
     off (el, type, func) {
         el.removeEventListener(type, func)
@@ -99,13 +182,54 @@ const loadImageAsync = (item, resolve, reject) => {
         resolve({
             naturalHeight: image.naturalHeight,
             naturalWidth: image.naturalWidth,
-            src: item.src
+            src: image.src
         })
     }
 
     image.onerror = function (e) {
         reject(e)
     }
+}
+
+const style = (el, prop) => {
+    return typeof getComputedStyle !== 'undefined'
+    ? getComputedStyle(el, null).getPropertyValue(prop)
+    : el.style[prop]
+}
+
+const overflow = (el) => {
+    return style(el, 'overflow') + style(el, 'overflow-y') + style(el, 'overflow-x')
+}
+
+const scrollParent = (el) => {
+    if (!inBrowser) return
+    if (!(el instanceof HTMLElement)) {
+        return window
+    }
+
+    let parent = el
+
+    while (parent) {
+        if (parent === document.body || parent === document.documentElement) {
+            break
+        }
+
+        if (!parent.parentNode) {
+            break
+        }
+
+        if (/(scroll|auto)/.test(overflow(parent))) {
+            return parent
+        }
+
+        parent = parent.parentNode
+    }
+
+    return window
+}
+
+function isObject (obj) {
+  return obj !== null && typeof obj === 'object'
 }
 
 export {
@@ -115,8 +239,11 @@ export {
     find,
     assign,
     _,
+    isObject,
     throttle,
     supportWebp,
     getDPR,
-    loadImageAsync
+    scrollParent,
+    loadImageAsync,
+    getBestSelectionFromSrcset
 }

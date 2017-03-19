@@ -1,13 +1,14 @@
 import Vue from 'vue'
 import App from './App.vue'
 // import vueLazy from 'vue-lazyload'
-import vueLazy from './lazy'
-// import vueLazy from './vue-lazy.es5' 
+import VueLazyload from './lazy'
+// import VueLazyload from './vue-lazy.es5' 
 
-import VueSave from './list-save'
+window.Vue = Vue
 
-Vue.use(vueLazy, {
+Vue.use(VueLazyload, {
     preLoad: 1.3,
+    lazyComponent: true,
     error: 'dist/404.png',
     loading: 'dist/loading-spin.svg',
     listenEvents: ['scroll'],
