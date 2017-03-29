@@ -16,6 +16,8 @@ export default class ReactiveListener {
 
         this.options = options
 
+        this.filter()
+
         this.initState()
 
         this.performanceData = {
@@ -28,8 +30,13 @@ export default class ReactiveListener {
 
         this.$parent = $parent
         this.elRenderer = elRenderer
+        this.render('loading', false)
     }
 
+    /**
+     * init listener state
+     * @return
+     */
     initState () {
         this.state = {
             error: false,
@@ -38,28 +45,67 @@ export default class ReactiveListener {
         }
     }
 
+    /**
+     * record performance
+     * @return
+     */
     record (event) {
         this.performanceData[event] = Date.now()
     }
 
+    /**
+     * update image listener data
+     * @param  {String} image uri
+     * @param  {String} loading image uri
+     * @param  {String} error image uri
+     * @return
+     */
     update ({ src, loading, error }) {
+        const oldSrc = this.src
         this.src = src
         this.loading = loading
         this.error = error
-        this.attempt = 0
-        this.initState()
+        this.filter()
+        if (oldSrc !== this.src) {
+            this.attempt = 0
+            this.initState()
+        }
     }
 
+    /**
+     * get el node rect
+     * @return
+     */
     getRect () {
         this.rect = this.el.getBoundingClientRect()
     }
 
+    /**
+     *  check el is in view
+     * @return {Boolean} el is in view
+     */
     checkInView () {
         this.getRect()
-        return (this.rect.top < window.innerHeight * this.options.preLoad && this.rect.bottom > 0) &&
+        return (this.rect.top < window.innerHeight * this.options.preLoad && this.rect.bottom > this.options.preLoadTop) &&
             (this.rect.left < window.innerWidth * this.options.preLoad && this.rect.right > 0)
     }
 
+    /**
+     * listener filter
+     */
+    filter () {
+        if (this.options.filter.webp && this.options.supportWebp) {
+            this.src = this.options.filter.webp(this, this.options)
+        }
+        if (this.options.filter.customer) {
+            this.src = this.options.filter.customer(this, this.options)
+        }
+    }
+
+    /**
+     * try load image and  render it
+     * @return
+     */
     load () {
         if ((this.attempt > this.options.attempt - 1) && this.state.error) {
             if (!this.options.silent) console.log('error end')
@@ -79,7 +125,6 @@ export default class ReactiveListener {
         loadImageAsync({
             src: this.src
         }, data => {
-            this.src = data.src
             this.naturalHeight = data.naturalHeight
             this.naturalWidth = data.naturalWidth
             this.state.loaded = true
@@ -94,10 +139,20 @@ export default class ReactiveListener {
         })
     }
 
+    /**
+     * render image
+     * @param  {String} state to render // ['loading', 'src', 'error']
+     * @param  {String} is form cache
+     * @return
+     */
     render (state, cache) {
         this.elRenderer(this, state, cache)
     }
 
+    /**
+     * output performance data
+     * @return {Object} performance data
+     */
     performance () {
         let state = 'loading'
         let time = 0
@@ -116,6 +171,10 @@ export default class ReactiveListener {
         }
     }
 
+    /**
+     * destroy
+     * @return
+     */
     destroy () {
         this.el = null
         this.src = null

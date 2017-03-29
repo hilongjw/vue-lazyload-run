@@ -382,7 +382,8 @@ export default {
       // loading: 'http://covteam.u.qiniudn.com/test19.jpg'
     })
     this.$Lazyload.$on('loaded', this.handler)
-    this.$Lazyload.$on('error', ({ el }) => {
+    this.$Lazyload.$once('error', ({ el }) => {
+      console.log('once error')
       // console.log('from emit error')
     })
     setTimeout(() => {
@@ -429,7 +430,7 @@ export default {
       })
     },
     addOne () {
-      this.list.unshift({
+      this.list.push({
         src: 'dist/test' + 1 + Math.floor(Math.random() * 12) + '.jpg',
         id: Date.now(),
         error: 'dist/404.png',

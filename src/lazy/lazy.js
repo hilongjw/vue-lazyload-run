@@ -1,4 +1,5 @@
 import { 
+    inBrowser,
     remove, 
     some, 
     find, 
@@ -19,15 +20,18 @@ const DEFAULT_EVENTS = ['scroll', 'wheel', 'mousewheel', 'resize', 'animationend
 
 export default function (Vue) {
     return class Lazy {
-        constructor ({ preLoad, error, loading, attempt, silent, scale, listenEvents, hasbind, filter, adapter }) {
+        constructor ({ preLoad, error, preLoadTop, loading, attempt, silent, scale, listenEvents, hasbind, filter, adapter }) {
             this.ListenerQueue = []
+            this.TargetIndex = 0
+            this.TargetQueue = []
             this.options = {
                 silent: silent || true,
                 preLoad: preLoad || 1.3,
+                preLoadTop: preLoadTop || 0,
                 error: error || DEFAULT_URL,
                 loading: loading || DEFAULT_URL,
                 attempt: attempt || 3,
-                scale: getDPR(scale),
+                scale: scale || getDPR(scale),
                 ListenEvents: listenEvents || DEFAULT_EVENTS,
                 hasbind: false,
                 supportWebp: supportWebp(),
@@ -46,16 +50,78 @@ export default function (Vue) {
             }, 200)
         }
 
+        /**
+         * update config
+         * @param  {Object} config params
+         * @return
+         */
         config (options = {}) {
             assign(this.options, options)
         }
 
+        /**
+         * add lazy component to queue
+         * @param  {Vue} vm lazy component instance
+         * @return
+         */
         addLazyBox (vm) {
             this.ListenerQueue.push(vm)
-            this.options.hasbind = true
-            this.initListen(window, true)
+            if (inBrowser) {
+                this._addListenerTarget(window)
+                if (vm.$el && vm.$el.parentNode) {
+                    this._addListenerTarget(vm.$el.parentNode)
+                }
+            }
         }
 
+        /**
+         * add listener target
+         * @param  {DOM} el listener target 
+         * @return
+         */
+        _addListenerTarget (el) {
+            if (!el) return
+            let target = find(this.TargetQueue, target => target.el === el)
+            if (!target) {
+                target = {
+                    el: el,
+                    id: ++this.TargetIndex,
+                    childrenCount: 1,
+                    listened: true
+                }
+                this.initListen(target.el, true)
+                this.TargetQueue.push(target)
+            } else {
+                target.childrenCount++
+            }
+            return this.TargetIndex
+        }
+
+        /**
+         * remove listener target or reduce target childrenCount
+         * @param  {DOM} el or window
+         * @return
+         */
+        _removeListenerTarget (el) {
+            this.TargetQueue.forEach((target, index) => {
+                if (target.el === el) {
+                    target.childrenCount--
+                    if (!target.childrenCount) {
+                        this.initListen(target.el, false)
+                        this.TargetQueue.splice(index, 1)
+                        target = null
+                    }
+                }
+            })
+        }
+
+        /**
+         * add image listener to queue
+         * @param  {DOM} el 
+         * @param  {object} binding vue directive binding
+         * @param  {vnode} vnode vue directive vnode
+         * @return
+         */
         add (el, binding, vnode) {
             if (some(this.ListenerQueue, item => item.el === el)) {
                 this.update(el, binding)
@@ -65,11 +131,7 @@ export default function (Vue) {
             let { src, loading, error } = this.valueFormatter(binding.value)
 
             Vue.nextTick(() => {
-                let tmp = getBestSelectionFromSrcset(el, this.options.scale)
-
-                if (tmp) {
-                    src = tmp
-                }
+                src = getBestSelectionFromSrcset(el, this.options.scale) || src
 
                 const container = Object.keys(binding.modifiers)[0]
                 let $parent
@@ -84,7 +146,7 @@ export default function (Vue) {
                     $parent = scrollParent(el)
                 }
 
-                this.ListenerQueue.push(this.listenerFilter(new ReactiveListener({
+                const newListener = new ReactiveListener({
                     bindType: binding.arg,
                     $parent,
                     el,
@@ -93,24 +155,31 @@ export default function (Vue) {
                     src,
                     elRenderer: this.elRenderer.bind(this),
                     options: this.options
-                })))
+                })
 
-                if (!this.ListenerQueue.length || this.options.hasbind) return
+                this.ListenerQueue.push(newListener)
+                if (inBrowser) {
+                    this._addListenerTarget(window)
+                    this._addListenerTarget($parent)
+                }
 
-                this.options.hasbind = true
-                this.initListen(window, true)
-                $parent && this.initListen($parent, true)
                 this.lazyLoadHandler()
                 Vue.nextTick(() => this.lazyLoadHandler())
             })
         }
 
+        /**
+         * update image src
+         * @param  {DOM} el 
+         * @param  {object} vue directive binding
+         * @return
+         */
         update (el, binding) {
             let { src, loading, error } = this.valueFormatter(binding.value)
 
             const exist = find(this.ListenerQueue, item => item.el === el)
 
-            exist && exist.src !== src && exist.update({
+            exist && exist.update({
                 src,
                 loading,
                 error
@@ -119,20 +188,42 @@ export default function (Vue) {
             Vue.nextTick(() => this.lazyLoadHandler())
         }
 
+        /**
+         * remove listener form list
+         * @param  {DOM} el 
+         * @return
+         */
         remove (el) {
             if (!el) return
             const existItem = find(this.ListenerQueue, item => item.el === el)
-            existItem && remove(this.ListenerQueue, existItem) && existItem.destroy()
-            this.options.hasbind && !this.ListenerQueue.length && this.initListen(window, false)
+            if (existItem) {
+                this._removeListenerTarget(existItem.$parent)
+                this._removeListenerTarget(window)
+                remove(this.ListenerQueue, existItem) && existItem.destroy()
+            }
         }
 
+        /**
+         * remove lazy components form list
+         * @param  {Vue} vm Vue instance 
+         * @return
+         */
         removeComponent (vm) {
-            vm && remove(this.ListenerQueue, vm)
-            this.options.hasbind && !this.ListenerQueue.length && this.initListen(window, false)
+            if (!vm) return
+            remove(this.ListenerQueue, vm)
+            if (vm.$parent && vm.$el.parentNode) {
+                this._removeListenerTarget(vm.$el.parentNode)
+            }
+            this._removeListenerTarget(window)
         }
 
+        /**
+         * add or remove eventlistener
+         * @param  {DOM} el DOM or Window
+         * @param  {boolean} start flag
+         * @return
+         */
         initListen (el, start) {
-            this.options.hasbind = start
             this.options.ListenEvents.forEach((evt) => _[start ? 'on' : 'off'](el, evt, this.lazyLoadHandler))
         }
 
@@ -171,6 +262,10 @@ export default function (Vue) {
             }
         }
 
+        /**
+         * output listener's load performance
+         * @return {Array} 
+         */
         performance () {
             let list = []
 
@@ -216,17 +311,6 @@ export default function (Vue) {
             this.$emit(state, listener, cache)
             this.options.adapter[state] && this.options.adapter[state](listener, this.options)
         }
-
-        listenerFilter (listener) {
-            if (this.options.filter.webp && this.options.supportWebp) {
-                listener.src = this.options.filter.webp(listener, this.options)
-            }
-            if (this.options.filter.customer) {
-                listener.src = this.options.filter.customer(listener, this.options)
-            }
-            return listener
-        }
-
 
         /**
          * generate loading loaded error image url 

@@ -10,17 +10,9 @@ export default (lazy) => {
         },
         render (h) {
             if (this.show === false) {
-                return h(this.tag, {
-                    attrs: {
-                        class: 'cov'
-                    }
-                })
+                return h(this.tag)
             }
-            return h(this.tag, {
-                attrs: {
-                    class: 'cov'
-                }
-            }, this.$slots.default)
+            return h(this.tag, null, this.$slots.default)
         },
         data () {
             return {
@@ -50,6 +42,7 @@ export default (lazy) => {
             },
             load () {
                 this.show = true
+                this.state.loaded = true
                 this.$emit('show', this)
             }
         }
