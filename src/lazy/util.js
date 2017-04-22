@@ -30,6 +30,8 @@ function some (arr, fn) {
 function getBestSelectionFromSrcset (el, scale) {
     if (el.tagName !== 'IMG' || !el.getAttribute('data-srcset')) return
 
+    el.addEventListener('click', e => console.log(e))
+
     let options = el.getAttribute('data-srcset')
     const result = []
     const container = el.parentNode
