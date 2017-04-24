@@ -16,7 +16,7 @@ import {
 import ReactiveListener from './listener'
 
 const DEFAULT_URL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-const DEFAULT_EVENTS = ['scroll', 'wheel', 'mousewheel', 'resize', 'animationend', 'webkitAnimationEnd', 'transitionend', 'touchmove']
+const DEFAULT_EVENTS = ['scroll', 'wheel', 'mousewheel', 'resize', 'animationend', 'transitionend', 'touchmove']
 
 export default function (Vue) {
     return class Lazy {
@@ -149,7 +149,7 @@ export default function (Vue) {
          */
         update (el, binding) {
             let { src, loading, error } = this._valueFormatter(binding.value)
-            src = getBestSelectionFromSrcset(el, this.options.scale) || src
+
             const exist = find(this.ListenerQueue, item => item.el === el)
 
             exist && exist.update({
@@ -312,7 +312,7 @@ export default function (Vue) {
             el.setAttribute('lazy', state)
 
             this.$emit(state, listener, cache)
-            this.options.adapter[state] && this.options.adapter[state](listener, cache, this.options)
+            this.options.adapter[state] && this.options.adapter[state](listener, this.options)
         }
 
         /**

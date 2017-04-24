@@ -30,8 +30,6 @@ function some (arr, fn) {
 function getBestSelectionFromSrcset (el, scale) {
     if (el.tagName !== 'IMG' || !el.getAttribute('data-srcset')) return
 
-    el.addEventListener('click', e => console.log(e))
-
     let options = el.getAttribute('data-srcset')
     const result = []
     const container = el.parentNode
@@ -234,6 +232,21 @@ function isObject (obj) {
   return obj !== null && typeof obj === 'object'
 }
 
+function ObjectKeys (obj) {
+    if (!(obj instanceof Object)) return []
+    if (Object.keys) {
+        return Object.keys(obj)
+    } else {
+        let keys = []
+        for (let key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                keys.push(key)
+            }
+        }
+        return keys
+    }
+}
+
 export {
     inBrowser,
     remove,
@@ -247,5 +260,6 @@ export {
     getDPR,
     scrollParent,
     loadImageAsync,
-    getBestSelectionFromSrcset
+    getBestSelectionFromSrcset,
+    ObjectKeys
 }

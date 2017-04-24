@@ -1,4 +1,4 @@
-import { loadImageAsync } from './util'
+import { loadImageAsync, ObjectKeys } from './util'
 
 let imageCache = {}
 
@@ -94,12 +94,13 @@ export default class ReactiveListener {
      * listener filter
      */
     filter () {
-        if (this.options.filter.webp && this.options.supportWebp) {
-            this.src = this.options.filter.webp(this, this.options)
-        }
-        if (this.options.filter.customer) {
-            this.src = this.options.filter.customer(this, this.options)
-        }
+        ObjectKeys(this.options.filter).map(key => {
+            if (this.options.supportWebp && key === 'webp') {
+                this.options.filter[key](this, this.options)
+            } else {
+                this.options.filter[key](this, this.options)
+            }
+        })
     }
 
     /**
