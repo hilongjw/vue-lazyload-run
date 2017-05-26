@@ -13,23 +13,30 @@ Vue.use(VueLazyload, {
     loading: 'dist/loading-spin.svg',
     listenEvents: ['scroll'],
     adapter: {
-        loaded (listender, fromCache, Init) {
+        loaded (listener, fromCache, Init) {
            
         },
-        loading (listender, Init) {
+        loading (listener, Init) {
             // console.log('loading')
         },
-        error (listender, Init) {
+        error (listener, Init) {
             // console.log('error')
         }
     },
     filter: {
-        webp ({ src }) {
+        progressive (listener, options) {
             const isCDN = /qiniudn.com/
-            if (isCDN.test(src)) {
-                src += '?imageView2/2/format/webp'
+            if (isCDN.test(listener.src)) {
+                listener.el.setAttribute('lazy-progressive', 'true')
+                listener.loading = listener.src + '?imageView2/1/w/10/h/10'
             }
-            return src
+        },
+        webp (listener, options) {
+            if (!options.supportWebp) return
+            const isCDN = /qiniudn.com/
+            if (isCDN.test(listener.src)) {
+                listener.src += '?imageView2/2/format/webp'
+            }
         }
     }
 })

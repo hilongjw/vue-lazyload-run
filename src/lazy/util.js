@@ -108,6 +108,7 @@ function supportWebp () {
     try {
         let el = d.createElement('object')
         el.type = 'image/webp'
+        el.style.visibility = 'hidden'
         el.innerHTML = '!'
         d.body.appendChild(el)
         support = !el.offsetWidth

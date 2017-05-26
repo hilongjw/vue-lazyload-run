@@ -16,6 +16,12 @@ export default {
   props: {
     list: Array
   },
+  filters: {
+    size (src) {
+      console.log('src', src)
+      return src
+    }
+  },
   methods: {
     removeTop (e) {
       this.$emit('delete', this.list[0])

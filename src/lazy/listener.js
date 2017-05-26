@@ -95,11 +95,21 @@ export default class ReactiveListener {
      */
     filter () {
         ObjectKeys(this.options.filter).map(key => {
-            if (this.options.supportWebp && key === 'webp') {
-                this.options.filter[key](this, this.options)
-            } else {
-                this.options.filter[key](this, this.options)
-            }
+            this.options.filter[key](this, this.options)
+        })
+    }
+
+    /**
+     * render loading first
+     * @params cb:Function
+     * @return
+     */
+    renderLoading (cb) {
+        loadImageAsync({
+            src: this.loading
+        }, data => {
+            this.render('loading', false)
+            cb()
         })
     }
 
@@ -117,26 +127,26 @@ export default class ReactiveListener {
             return this.render('loaded', true)
         }
 
-        this.render('loading', false)
+        this.renderLoading(() => {
+            this.attempt++
 
-        this.attempt++
+            this.record('loadStart')
 
-        this.record('loadStart')
-
-        loadImageAsync({
-            src: this.src
-        }, data => {
-            this.naturalHeight = data.naturalHeight
-            this.naturalWidth = data.naturalWidth
-            this.state.loaded = true
-            this.state.error = false
-            this.record('loadEnd')
-            this.render('loaded', false)
-            imageCache[this.src] = 1
-        }, err => {
-            this.state.error = true
-            this.state.loaded = false
-            this.render('error', false)
+            loadImageAsync({
+                src: this.src
+            }, data => {
+                this.naturalHeight = data.naturalHeight
+                this.naturalWidth = data.naturalWidth
+                this.state.loaded = true
+                this.state.error = false
+                this.record('loadEnd')
+                this.render('loaded', false)
+                imageCache[this.src] = 1
+            }, err => {
+                this.state.error = true
+                this.state.loaded = false
+                this.render('error', false)
+            })
         })
     }
 

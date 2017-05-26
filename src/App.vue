@@ -20,6 +20,7 @@ html, body {
   margin: .5%;
   box-sizing: border-box;
   text-align: center;
+  background: #2196F3;
 }
 
 #box {
@@ -67,6 +68,11 @@ html, body {
 
 .lazy-img-fadein[lazy=loading] {
   width: 40px!important;
+  margin: auto;
+}
+
+.lazy-img-fadein[lazy-progressive=true] {
+  width: 100%!important;
   margin: auto;
 }
 
@@ -121,7 +127,6 @@ html, body {
   background-size: 10%;
   background-repeat: no-repeat;
   background-position: 50%;
-  background-color: #f1f1f1;
 }
 .bg-box[lazy=loaded] {
   background-size: cover;
@@ -131,6 +136,11 @@ html, body {
   animation-fill-mode: both;
   -webkit-animation-name: fadeIn;
   animation-name: fadeIn;
+}
+
+.bg-box[lazy-progressive=true] {
+  background-size: cover;
+  padding-bottom: 100%;
 }
 
 .switch-header {
@@ -292,6 +302,15 @@ import ListC from './components/list-c.vue'
 import avatars from '../dist/avatar/avatar'
 
 const IMGS = [
+  "http://covteam.u.qiniudn.com/test16.jpg",
+  "http://covteam.u.qiniudn.com/test14.jpg",
+  "http://covteam.u.qiniudn.com/test15.jpg",
+  "http://covteam.u.qiniudn.com/test16.jpg",
+  "http://covteam.u.qiniudn.com/test17.jpg",
+  "http://covteam.u.qiniudn.com/test18.jpg",
+  "http://covteam.u.qiniudn.com/test19.jpg",
+  "http://covteam.u.qiniudn.com/test20.jpg",
+  "http://covteam.u.qiniudn.com/test21.jpg",
   "dist/test1.jpg",
   "dist/test2.jpg",
   "dist/test3.jpg",
@@ -305,15 +324,6 @@ const IMGS = [
   "dist/test10.jpg",
   "dist/test11.jpg",
   "dist/test12.jpg",
-  "http://covteam.u.qiniudn.com/test16.jpg",
-  "http://covteam.u.qiniudn.com/test14.jpg",
-  "http://covteam.u.qiniudn.com/test15.jpg",
-  "http://covteam.u.qiniudn.com/test16.jpg",
-  "http://covteam.u.qiniudn.com/test17.jpg",
-  "http://covteam.u.qiniudn.com/test18.jpg",
-  "http://covteam.u.qiniudn.com/test19.jpg",
-  "http://covteam.u.qiniudn.com/test20.jpg",
-  "http://covteam.u.qiniudn.com/test21.jpg"
 ]
 
 const SEEM_IMGS = [
