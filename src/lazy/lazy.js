@@ -10,22 +10,32 @@ import {
     scrollParent,
     getBestSelectionFromSrcset,
     assign,
-    isObject
+    isObject,
+    hasIntersectionObserver,
+    modeType
 } from './util'
 
 import ReactiveListener from './listener'
 
 const DEFAULT_URL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
 const DEFAULT_EVENTS = ['scroll', 'wheel', 'mousewheel', 'resize', 'animationend', 'transitionend', 'touchmove']
+const DEFAULT_OBSERVER_OPTIONS = {
+    rootMargin: '0px', 
+    threshold: 0
+}
 
 export default function (Vue) {
     return class Lazy {
-        constructor ({ preLoad, error, preLoadTop, loading, attempt, silent, scale, listenEvents, hasbind, filter, adapter }) {
+        constructor ({ preLoad, error, throttleWait, preLoadTop, dispatchEvent, loading, attempt, silent, scale, listenEvents, hasbind, filter, adapter, observer, observerOptions }) {
+            this.version = '__VUE_LAZYLOAD_VERSION__'
+            this.mode = modeType.event
             this.ListenerQueue = []
             this.TargetIndex = 0
             this.TargetQueue = []
             this.options = {
                 silent: silent || true,
+                dispatchEvent: !!dispatchEvent,
+                throttleWait: throttleWait || 200,
                 preLoad: preLoad || 1.3,
                 preLoadTop: preLoadTop || 0,
                 error: error || DEFAULT_URL,
@@ -36,18 +46,15 @@ export default function (Vue) {
                 hasbind: false,
                 supportWebp: supportWebp(),
                 filter: filter || {},
-                adapter: adapter || {}
+                adapter: adapter || {},
+                observer: !!observer,
+                observerOptions: observerOptions || DEFAULT_OBSERVER_OPTIONS
             }
             this._initEvent()
 
-            this.lazyLoadHandler = throttle(() => {
-                let catIn = false
-                this.ListenerQueue.forEach(listener => {
-                    if (listener.state.loaded) return
-                    catIn = listener.checkInView()
-                    catIn && listener.load()
-                })
-            }, 200)
+            this.lazyLoadHandler = throttle(this._lazyLoadHandler.bind(this), this.options.throttleWait)
+
+            this.setMode(this.options.observer ? modeType.observer : modeType.event)
         }
 
         /**
@@ -73,6 +80,7 @@ export default function (Vue) {
             return list
         }
 
+
         /**
          * add lazy component to queue
          * @param  {Vue} vm lazy component instance
@@ -82,6 +90,7 @@ export default function (Vue) {
             this.ListenerQueue.push(vm)
             if (inBrowser) {
                 this._addListenerTarget(window)
+                this._observer && this._observer.observe(vm.el)
                 if (vm.$el && vm.$el.parentNode) {
                     this._addListenerTarget(vm.$el.parentNode)
                 }
@@ -105,6 +114,7 @@ export default function (Vue) {
 
             Vue.nextTick(() => {
                 src = getBestSelectionFromSrcset(el, this.options.scale) || src
+                this._observer && this._observer.observe(el)
 
                 const container = Object.keys(binding.modifiers)[0]
                 let $parent
@@ -131,6 +141,7 @@ export default function (Vue) {
                 })
 
                 this.ListenerQueue.push(newListener)
+
                 if (inBrowser) {
                     this._addListenerTarget(window)
                     this._addListenerTarget($parent)
@@ -149,6 +160,7 @@ export default function (Vue) {
          */
         update (el, binding) {
             let { src, loading, error } = this._valueFormatter(binding.value)
+            src = getBestSelectionFromSrcset(el, this.options.scale) || src
 
             const exist = find(this.ListenerQueue, item => item.el === el)
 
@@ -157,6 +169,7 @@ export default function (Vue) {
                 loading,
                 error
             })
+            this._observer && this._observer.observe(el)
             this.lazyLoadHandler()
             Vue.nextTick(() => this.lazyLoadHandler())
         }
@@ -168,6 +181,7 @@ export default function (Vue) {
          */
         remove (el) {
             if (!el) return
+            this._observer && this._observer.unobserve(el)
             const existItem = find(this.ListenerQueue, item => item.el === el)
             if (existItem) {
                 this._removeListenerTarget(existItem.$parent)
@@ -184,10 +198,37 @@ export default function (Vue) {
         removeComponent (vm) {
             if (!vm) return
             remove(this.ListenerQueue, vm)
+            this._observer && this._observer.unobserve(vm.el)
             if (vm.$parent && vm.$el.parentNode) {
                 this._removeListenerTarget(vm.$el.parentNode)
             }
             this._removeListenerTarget(window)
+        }
+
+        setMode (mode) {
+            if (!hasIntersectionObserver && mode === modeType.observer) {
+                mode = modeType.event
+            }
+
+            this.mode = mode // event or observer
+            
+            if (mode === modeType.event) {
+                if (this._observer) {
+                    this.ListenerQueue.forEach(listener => {
+                        this._observer.unobserve(listener.el)
+                    })
+                    this._observer = null
+                }
+
+                this.TargetQueue.forEach(target => {
+                    this._initListen(target.el, true)
+                })
+            } else {
+                this.TargetQueue.forEach(target => {
+                    this._initListen(target.el, false)
+                })
+                this._initIntersectionObserver()
+            }
         }
         
         /**** Private functions ****/
@@ -207,7 +248,7 @@ export default function (Vue) {
                     childrenCount: 1,
                     listened: true
                 }
-                this._initListen(target.el, true)
+                this.mode === modeType.event && this._initListen(target.el, true)
                 this.TargetQueue.push(target)
             } else {
                 target.childrenCount++
@@ -278,6 +319,51 @@ export default function (Vue) {
             }
         }
 
+        /**
+         * find nodes which in viewport and trigger load
+         * @return
+         */
+        _lazyLoadHandler () {
+            let catIn = false
+            this.ListenerQueue.forEach(listener => {
+                if (listener.state.loaded) return
+                catIn = listener.checkInView()
+                catIn && listener.load()
+            })
+        }
+
+        /**
+         * init IntersectionObserver
+         * set mode to observer
+         * @return
+         */
+        _initIntersectionObserver () {
+            if (!hasIntersectionObserver) return
+            this._observer = new IntersectionObserver(this._observerHandler.bind(this), this.options.observerOptions)
+            if (this.ListenerQueue.length) {
+                this.ListenerQueue.forEach(listener => {
+                    this._observer.observe(listener.el)
+                })
+            }
+        }
+
+        /**
+         * init IntersectionObserver
+         * @return
+         */
+        _observerHandler (entries, observer) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    this.ListenerQueue.forEach(listener => {
+                        if (listener.el === entry.target) {
+                            if (listener.state.loaded) return this._observer.unobserve(listener.el)
+                            listener.load()
+                        }
+                        
+                    })
+                }
+            })
+        }
 
         /**
          * set element attribute with image'url and state
@@ -313,6 +399,13 @@ export default function (Vue) {
 
             this.$emit(state, listener, cache)
             this.options.adapter[state] && this.options.adapter[state](listener, this.options)
+
+            if (this.options.dispatchEvent) {
+                const event = new CustomEvent(state, {
+                    detail: listener
+                })
+                el.dispatchEvent(event)
+            }
         }
 
         /**

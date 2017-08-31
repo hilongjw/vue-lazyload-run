@@ -407,7 +407,7 @@ export default {
     ListC
   },
   mounted () {
-
+    window.aa = this.$Lazyload
   },
   methods: {
     toggle () {
@@ -426,7 +426,7 @@ export default {
       this.state = result
     },
     handler (listener, fromCache) {
-      if (!fromCache) console.log(listener)
+      // if (!fromCache) console.log(listener)
     },
     sortAction () {
       this.list = this.list.sort((a, b) => {

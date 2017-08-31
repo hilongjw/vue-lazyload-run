@@ -7,8 +7,10 @@ import VueLazyload from './lazy'
 window.Vue = Vue
 
 Vue.use(VueLazyload, {
+    observer: true,
     preLoad: 1.3,
     lazyComponent: true,
+    dispatchEvent: true,
     error: 'dist/404.png',
     loading: 'dist/loading-spin.svg',
     listenEvents: ['scroll'],
