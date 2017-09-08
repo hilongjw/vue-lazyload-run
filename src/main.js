@@ -7,7 +7,7 @@ import VueLazyload from './lazy'
 window.Vue = Vue
 
 Vue.use(VueLazyload, {
-    observer: true,
+    // observer: true,
     preLoad: 1.3,
     lazyComponent: true,
     dispatchEvent: true,

@@ -4,7 +4,7 @@
   "author": "Awe <hilongjw@gmail.com>",
   "private": true,
   "scripts": {
-    "dev": "webpack-dev-server --inline --hot --host 0.0.0.0 --public 192.168.18.58:8080",
+    "dev": "webpack-dev-server --inline --hot --host 0.0.0.0 --public 192.168.61.170:8080",
     "build": "cross-env NODE_ENV=production webpack --progress --hide-modules"
   },
   "dependencies": {},

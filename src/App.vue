@@ -268,6 +268,10 @@ html, body {
       <div class="header-left">
         <button 
           class="switch-btn" 
+          @click="changeMode"
+        >{{ mode }}</button>
+        <button 
+          class="switch-btn" 
           @click="update"
         >Update</button>
         <button 
@@ -381,6 +385,7 @@ export default {
   name: 'List',
   data () {
     return {
+      mode: 'event',
       loadedEl: [],
       index: 1,
       state: 'a',
@@ -424,6 +429,10 @@ export default {
           break
       }
       this.state = result
+    },
+    changeMode () {
+      this.$Lazyload.setMode(this.$Lazyload.mode === 'event' ? 'observer' : 'event')
+      this.mode = this.$Lazyload.mode
     },
     handler (listener, fromCache) {
       // if (!fromCache) console.log(listener)
