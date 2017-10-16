@@ -11,8 +11,8 @@ Vue.use(VueLazyload, {
     preLoad: 1.3,
     lazyComponent: true,
     dispatchEvent: true,
-    error: 'dist/404.png',
-    loading: 'dist/loading-spin.svg',
+    error: 'dist/404.jpg',
+    loading: false,
     listenEvents: ['scroll'],
     adapter: {
         loaded (listener, fromCache, Init) {
@@ -42,6 +42,8 @@ Vue.use(VueLazyload, {
         }
     }
 })
+
+// Vue.prototype.$Lazyload.config({ loading: 'dist/loading-spin.svg' })
 
 new Vue({
   el: '#app',

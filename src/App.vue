@@ -315,42 +315,43 @@ const IMGS = [
   "http://covteam.u.qiniudn.com/test19.jpg",
   "http://covteam.u.qiniudn.com/test20.jpg",
   "http://covteam.u.qiniudn.com/test21.jpg",
-  "dist/test1.jpg",
-  "dist/test2.jpg",
-  "dist/test3.jpg",
-  "dist/test4.jpg",
-  "dist/test0.jpg",
-  "dist/test5.jpg",
-  "dist/test6.jpg",
-  "dist/test7.jpg",
-  "dist/test8.jpg",
-  "dist/test9.jpg",
-  "dist/test10.jpg",
-  "dist/test11.jpg",
-  "dist/test12.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test99.jpg",
+  "dist/avatar/test2.jpg",
+  "dist/avatar/test3.jpg",
+  "dist/avatar/test4.jpg",
+  "dist/avatar/test0.jpg",
+  "dist/avatar/test5.jpg",
+  "dist/avatar/test6.jpg",
+  "dist/avatar/test7.jpg",
+  "dist/avatar/test8.jpg",
+  "dist/avatar/test9.jpg",
+  "dist/avatar/test10.jpg",
+  "dist/avatar/test11.jpg",
+  "dist/avatar/test12.jpg",
 ]
 
 const SEEM_IMGS = [
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg",
-  "dist/test1.jpg"
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg",
+  "dist/avatar/test1.jpg"
 ]
 
 const getList = (imgs) => {
@@ -445,12 +446,12 @@ export default {
     update () {
       this.list.forEach(item => {
         item.id = Date.now() + Math.floor(Math.random() * 10000)
-        item.src = 'dist/test' + 1 + Math.floor(Math.random() * 9) + '.jpg'
+        item.src = 'dist/avatar/test' + 1 + Math.floor(Math.random() * 9) + '.jpg'
       })
     },
     addOne () {
       this.list.push({
-        src: 'dist/test' + 1 + Math.floor(Math.random() * 12) + '.jpg',
+        src: 'dist/avatar/test' + 1 + Math.floor(Math.random() * 12) + '.jpg',
         id: Date.now(),
         error: 'dist/404.png',
         loading: 'dist/loading-spin.svg'
