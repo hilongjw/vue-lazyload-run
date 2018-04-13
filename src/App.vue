@@ -329,6 +329,7 @@ const IMGS = [
   "dist/avatar/test10.jpg",
   "dist/avatar/test11.jpg",
   "dist/avatar/test12.jpg",
+  " dist/avatar/测试test4的副本.jpg"
 ]
 
 const SEEM_IMGS = [
