@@ -1,6 +1,6 @@
 <template>
   <div class="img-list">
-    <div class="img-list-2" v-lazy-container="{ selector: 'img' }" v-html="content"></div>
+    <div class="img-list-2" v-lazy-container="{ selector: '.img-list-2 .lazy-img-fadein',  }" v-html="content"></div>
     <ul>
     <!-- <transition-group name="flip-list" tag="ul"> -->
       <li v-for="img in list" @click="delMe(img)">
@@ -26,7 +26,7 @@ export default {
   computed: {
     content () {
       return this.list.map(img => {
-        return `<img data-src="${img.src}" width="100%" height="400" class="lazy-img-fadein">`
+        return `<img data-src="${img.src}" data-error="dist/404.jpg?6666" width="100%" height="400" class="lazy-img-fadein">`
       }).join('\n')
     }
   },

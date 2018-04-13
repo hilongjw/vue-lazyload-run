@@ -169,7 +169,10 @@ export default function (Vue) {
         loading,
         error
       })
-      this._observer && this._observer.observe(el)
+      if(this._observer){
+        this._observer.unobserve(el)
+        this._observer.observe(el)
+      }
       this.lazyLoadHandler()
       Vue.nextTick(() => this.lazyLoadHandler())
     }
@@ -395,7 +398,7 @@ export default function (Vue) {
       }
 
       if (bindType) {
-        el.style[bindType] = 'url(' + src + ')'
+        el.style[bindType] = 'url("' + src + '")'
       } else if (el.getAttribute('src') !== src) {
         el.setAttribute('src', src)
       }
