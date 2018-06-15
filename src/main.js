@@ -2,8 +2,8 @@ import Vue from 'vue'
 // import Vue from './vue-v1.026'
 import App from './App.vue'
 // import vueLazy from 'vue-lazyload'
-import VueLazyload from './lazy'
-// import VueLazyload from './vue-lazy'
+// import VueLazyload from './lazy'
+import VueLazyload from './vue-lazy'
 
 window.Vue = Vue
 
@@ -11,9 +11,10 @@ Vue.use(VueLazyload, {
   // observer: true,
   preLoad: 1.3,
   lazyComponent: true,
+  lazyImage: true,
   dispatchEvent: true,
   error: 'dist/404.jpg',
-  loading: false,
+  loading: 'dist/loading-spin.svg',
   listenEvents: ['scroll'],
   adapter: {
     loaded (listener, fromCache, Init) {

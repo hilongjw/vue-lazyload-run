@@ -1,13 +1,11 @@
 <template>
-  <div class="img-list">
-    <div class="img-list-2" v-lazy-container="{ selector: '.img-list-2 .lazy-img-fadein',  }" v-html="content"></div>
-    <ul>
-    <!-- <transition-group name="flip-list" tag="ul"> -->
-      <li v-for="img in list" @click="delMe(img)">
-        <img  :data="img.src" @error="errorHandler" class="lazy-img-fadein" v-lazy="img.src" width="100%" height="400">
+  <div class="img-list list-a">
+    <transition-group name="flip-list" tag="ul">
+      <li v-for="img in list" @click="delMe(img)" :key="img.id">
+        <img :data-current="img.src" class="lazy-img-fadein" v-lazy="img.src" width="100%" height="400">
       </li>
-    </ul>
-    <!-- </transition-group> -->
+    </transition-group>
+    <div class="img-list-2" v-lazy-container="{ selector: '.img-list-2 .lazy-img-fadein',  }" v-html="content"></div>
   </div>
 </template>
 
@@ -31,9 +29,6 @@ export default {
     }
   },
   methods: {
-    errorHandler (e) {
-      console.log('error', e)
-    },
     removeTop (e) {
       this.$emit('delete', this.list[0])
     },

@@ -263,7 +263,7 @@ html, body {
         </a>
       </div>
       <div class="header-center">
-        <span>{{ (state === 'a') ? 'Using img tag' : 'Using style background-image'}}</span>
+        <span>{{ router.routes[router.index] }}</span>
       </div>
       <div class="header-left">
         <button 
@@ -289,11 +289,12 @@ html, body {
       </div>
     </div>
     <div class="content">
-      <transition name="in-out-translate-fade" mode="out-in">
-        <list-a :list="list" v-if="state === 'a'" @delete="deleteAction"></list-a>
-        <list-b :list="list" v-else  @delete="deleteAction"></list-b>
-        <!-- <list-c :list="list" v-else></list-c> -->
-      </transition>
+      <transition-group name="in-out-translate-fade" mode="out-in">
+        <list-a :list="list" v-if="router.index === 0" :key="0" @delete="deleteAction"></list-a>
+        <LazyImageTest :list="list" v-if="router.index === 1" :key="1"></LazyImageTest>
+        <list-b :list="list" v-if="router.index === 2" :key="2" @delete="deleteAction"></list-b>
+        <list-c :list="list" v-if="router.index === 3" :key="3"></list-c>
+      </transition-group>
     </div>
   </div>
 </template>
@@ -302,6 +303,7 @@ html, body {
 import ListA from './components/list-a.vue'
 import ListB from './components/list-B.vue'
 import ListC from './components/list-c.vue'
+import LazyImageTest from './components/lazy-image-test.vue'
 
 import avatars from '../dist/avatar/avatar'
 
@@ -390,7 +392,14 @@ export default {
       mode: 'event',
       loadedEl: [],
       index: 1,
-      state: 'a',
+      router: {
+        index: 0,
+        routes: [
+          'img',
+          'background-image',
+          'lazy-image',
+        ]
+      },
       list: [] // getList(IMGS)
     }
   },
@@ -407,30 +416,39 @@ export default {
       this.list = getList(IMGS) // getAvatarList()
     }, 1000)
     console.log(this.$Lazyload)
+    this.init()
   },
   components: {
     ListA,
     ListB,
-    ListC
+    ListC,
+    LazyImageTest
   },
   mounted () {
     window.aa = this.$Lazyload
   },
   methods: {
-    toggle () {
-      let result
-      switch (this.state) {
-        case 'a':
-          result = 'b'
-          break
-        case 'b':
-          result = 'a'
-          break
-        case 'c':
-          result = 'a'
-          break
+    init () {
+      const search = location.search || ''
+      const query = search
+        .replace('?', '')
+        .split('&')
+        .map(s => s.split('='))
+        .reduce((data, val) => {
+          data[val[0]] = Number.isNaN(Number(val[1])) ? val[1] : Number(val[1])
+          return data
+        }, {})
+
+      if (typeof query.route !== 'undefined') {
+        this.router.index = query.route
+        console.log(window.bb = this)
       }
-      this.state = result
+    },
+    toggle () {
+      this.router.index++
+      if (this.router.index > this.router.routes.length - 1) {
+        this.router.index = 0
+      }
     },
     changeMode () {
       this.$Lazyload.setMode(this.$Lazyload.mode === 'event' ? 'observer' : 'event')
