@@ -1,7 +1,27 @@
 import assign from 'assign-deep'
 
 const inBrowser = typeof window !== 'undefined'
-export const hasIntersectionObserver = inBrowser && 'IntersectionObserver' in window
+export const hasIntersectionObserver = checkIntersectionObserver()
+
+function checkIntersectionObserver () {
+  if (inBrowser &&
+    'IntersectionObserver' in window &&
+    'IntersectionObserverEntry' in window &&
+    'intersectionRatio' in window.IntersectionObserverEntry.prototype) {
+  // Minimal polyfill for Edge 15's lack of `isIntersecting`
+  // See: https://github.com/w3c/IntersectionObserver/issues/211
+    if (!('isIntersecting' in window.IntersectionObserverEntry.prototype)) {
+      Object.defineProperty(window.IntersectionObserverEntry.prototype,
+        'isIntersecting', {
+          get: function () {
+            return this.intersectionRatio > 0
+          }
+        })
+    }
+    return true
+  }
+  return false
+}
 
 export const modeType = {
   event: 'event',
@@ -68,10 +88,10 @@ function getBestSelectionFromSrcset (el, scale) {
 
   result.sort(function (a, b) {
     if (a[0] < b[0]) {
-      return -1
+      return 1
     }
     if (a[0] > b[0]) {
-      return 1
+      return -1
     }
     if (a[0] === b[0]) {
       if (b[1].indexOf('.webp', b[1].length - 5) !== -1) {
@@ -85,11 +105,15 @@ function getBestSelectionFromSrcset (el, scale) {
   })
   let bestSelectedSrc = ''
   let tmpOption
-  const resultCount = result.length
 
-  for (let i = 0; i < resultCount; i++) {
+  for (let i = 0; i < result.length; i++) {
     tmpOption = result[i]
-    if (tmpOption[0] >= containerWidth) {
+    bestSelectedSrc = tmpOption[1]
+    const next = result[i + 1]
+    if (next && next[0] < containerWidth) {
+      bestSelectedSrc = tmpOption[1]
+      break
+    } else if (!next) {
       bestSelectedSrc = tmpOption[1]
       break
     }
@@ -271,7 +295,33 @@ function ArrayFrom (arrLike) {
 
 function noop () {}
 
+class ImageCache {
+  constructor ({ max }) {
+    this.options = {
+      max: max || 100
+    }
+    this._caches = []
+  }
+
+  has (key) {
+    return this._caches.indexOf(key) > -1
+  }
+
+  add (key) {
+    if (this.has(key)) return
+    this._caches.push(key)
+    if (this._caches.length > this.options.max) {
+      this.free()
+    }
+  }
+
+  free () {
+    this._caches.shift()
+  }
+}
+
 export {
+  ImageCache,
   inBrowser,
   CustomEvent,
   remove,

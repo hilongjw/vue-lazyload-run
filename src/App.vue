@@ -305,18 +305,8 @@ import ListB from './components/list-B.vue'
 import ListC from './components/list-c.vue'
 import LazyImageTest from './components/lazy-image-test.vue'
 
-import avatars from '../dist/avatar/avatar'
-
+const avatars = []
 const IMGS = [
-  "http://covteam.u.qiniudn.com/test16.jpg",
-  "http://covteam.u.qiniudn.com/test14.jpg",
-  "http://covteam.u.qiniudn.com/test15.jpg",
-  "http://covteam.u.qiniudn.com/test16.jpg",
-  "http://covteam.u.qiniudn.com/test17.jpg",
-  "http://covteam.u.qiniudn.com/test18.jpg",
-  "http://covteam.u.qiniudn.com/test19.jpg",
-  "http://covteam.u.qiniudn.com/test20.jpg",
-  "http://covteam.u.qiniudn.com/test21.jpg",
   "dist/avatar/test1.jpg",
   "dist/avatar/test99.jpg",
   "dist/avatar/test2.jpg",
@@ -331,7 +321,7 @@ const IMGS = [
   "dist/avatar/test10.jpg",
   "dist/avatar/test11.jpg",
   "dist/avatar/test12.jpg",
-  " dist/avatar/测试test4的副本.jpg"
+  "dist/avatar/测试test4的副本.jpg"
 ]
 
 const SEEM_IMGS = [
@@ -367,21 +357,6 @@ const getList = (imgs) => {
       // loading: 'dist/loading-spin.svg'
     })
   })
-  return list
-}
-
-function getAvatarList () {
-  let list = []
-
-  avatars.forEach((user, index) => {
-    list.push({
-      src: 'dist/avatar/large/' + user.avatar,
-      id: user.avatar,
-      // error: 'dist/404.png',
-      // loading: 'dist/loading-spin.svg'
-    })
-  })
-
   return list
 }
 

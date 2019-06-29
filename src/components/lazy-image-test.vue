@@ -2,7 +2,7 @@
   <div class="img-list lazy-image-test">
     <ul>
     <!-- <transition-group name="flip-list" tag="ul"> -->
-      <li v-for="(img, i) in list" @click.native="delMe(img)">
+      <li v-for="(img, i) in list" @click.native="delMe(img)" :key="img">
         <lazy-image :src="img.src" :type="!!(i % 2)"  :data-current="img.src" class="lazy-img-fadein lazy-image"></lazy-image>
       </li>
     </ul>
