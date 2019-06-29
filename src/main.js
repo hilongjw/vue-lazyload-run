@@ -1,8 +1,9 @@
 import Vue from 'vue'
 // import Vue from './vue-v1.026'
 import App from './App.vue'
-import VueLazyload from './lazy'
+// import VueLazyload from './lazy'
 // import VueLazyload from './vue-lazy'
+import VueLazyload from 'vue-lazyload'
 
 window.Vue = Vue
 
